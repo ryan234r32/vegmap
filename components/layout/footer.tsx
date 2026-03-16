@@ -25,6 +25,16 @@ export function Footer() {
                   All Restaurants
                 </Link>
               </li>
+              <li>
+                <Link href="/restaurants/suggest" className="hover:text-foreground">
+                  Suggest a Restaurant
+                </Link>
+              </li>
+              <li>
+                <Link href="/night-markets" className="hover:text-foreground">
+                  Night Market Guide
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -44,8 +54,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contribute" className="hover:text-foreground">
-                  Contribute
+                <Link href="/tools/diet-card" className="hover:text-foreground">
+                  Diet Communication Card
                 </Link>
               </li>
             </ul>

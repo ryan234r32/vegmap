@@ -159,5 +159,5 @@ export interface RestaurantFilters {
   priceRange?: PriceRange;
   minRating?: number;
   search?: string;
-  sortBy?: "rating" | "reviews" | "distance" | "name";
+  sortBy?: "rating" | "reviews" | "distance" | "name" | "english_friendly";
 }

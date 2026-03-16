@@ -9,7 +9,9 @@ import { RestaurantFiltersBar } from "@/components/restaurant/restaurant-filters
 import { Button } from "@/components/ui/button";
 import { useRestaurants, useNearbyRestaurants } from "@/lib/hooks/use-restaurants";
 import { useGeolocation } from "@/lib/hooks/use-geolocation";
-import { Locate, List, MapIcon } from "lucide-react";
+import { Locate, List, MapIcon, Moon, Utensils, CreditCard } from "lucide-react";
+import Link from "next/link";
+import { TAIPEI_DISTRICTS } from "@/constants";
 import type { RestaurantFilters } from "@/lib/types";
 
 export default function HomePage() {
@@ -164,6 +166,77 @@ export default function HomePage() {
               )}
             </div>
           )}
+        </section>
+
+        {/* Quick Links */}
+        <section className="container mx-auto px-4 py-8 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* District Quick Links */}
+            <div>
+              <h3 className="font-semibold mb-3">Browse by District</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {TAIPEI_DISTRICTS.map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => {
+                      setFilters({ district: d });
+                      setView("list");
+                    }}
+                    className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tools */}
+            <div>
+              <h3 className="font-semibold mb-3">Traveler Tools</h3>
+              <div className="space-y-2">
+                <Link
+                  href="/tools/diet-card"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Diet Communication Card
+                </Link>
+                <Link
+                  href="/night-markets"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Moon className="h-4 w-4" />
+                  Night Market Guide
+                </Link>
+                <Link
+                  href="/restaurants/suggest"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Utensils className="h-4 w-4" />
+                  Suggest a Restaurant
+                </Link>
+              </div>
+            </div>
+
+            {/* Popular Cuisines */}
+            <div>
+              <h3 className="font-semibold mb-3">Popular Cuisines</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {["Taiwanese", "Japanese", "Indian", "Italian", "Thai", "Hot Pot", "Buffet", "Bakery"].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setFilters({ search: tag });
+                      setView("list");
+                    }}
+                    className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 

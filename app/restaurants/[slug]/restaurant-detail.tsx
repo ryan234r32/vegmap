@@ -8,11 +8,15 @@ import { StarRating } from "@/components/restaurant/star-rating";
 import { ReviewCard } from "@/components/review/review-card";
 import { ReviewForm } from "@/components/review/review-form";
 import { MenuDisplay } from "@/components/menu/menu-display";
+import { MenuUpload } from "@/components/menu/menu-upload";
+import { PhotoGallery } from "@/components/restaurant/photo-gallery";
+import { ReportIssueButton } from "@/components/restaurant/report-issue-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useFavorites } from "@/lib/hooks/use-favorites";
 import { createClient } from "@/lib/supabase/client";
 import {
   MapPin,
@@ -39,9 +43,9 @@ export function RestaurantDetail({
   menus,
 }: Props) {
   const { user } = useAuth();
+  const { isFavorited, toggle: toggleFavorite } = useFavorites();
   const [reviews, setReviews] = useState(initialReviews);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
 
   const handleReviewSuccess = async () => {
     setShowReviewForm(false);
@@ -126,10 +130,10 @@ export function RestaurantDetail({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsFavorited(!isFavorited)}
+                    onClick={() => toggleFavorite(restaurant.id)}
                   >
                     <Heart
-                      className={`h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : ""}`}
+                      className={`h-4 w-4 ${isFavorited(restaurant.id) ? "fill-red-500 text-red-500" : ""}`}
                     />
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleShare}>
@@ -189,6 +193,7 @@ export function RestaurantDetail({
                   <TabsTrigger value="menu">
                     Menu ({menus.length})
                   </TabsTrigger>
+                  <TabsTrigger value="photos">Photos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="reviews" className="mt-4">
@@ -244,6 +249,20 @@ export function RestaurantDetail({
                       ))}
                     </div>
                   )}
+
+                  {/* Menu Upload */}
+                  {user && (
+                    <div className="mt-6">
+                      <MenuUpload restaurantId={restaurant.id} />
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="photos" className="mt-4">
+                  <PhotoGallery
+                    restaurantId={restaurant.id}
+                    photos={[]}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
@@ -343,6 +362,17 @@ export function RestaurantDetail({
                   </div>
                 </div>
               )}
+
+              {/* Report Issue + Diet Card */}
+              <div className="space-y-3">
+                <ReportIssueButton restaurantId={restaurant.id} />
+                <a
+                  href="/tools/diet-card"
+                  className="block text-center text-sm text-green-700 hover:text-green-800 underline"
+                >
+                  Get your Diet Communication Card
+                </a>
+              </div>
             </div>
           </div>
         </div>

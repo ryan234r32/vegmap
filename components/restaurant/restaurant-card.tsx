@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { VegTypeBadge } from "./veg-type-badge";
+import { TrustBadge } from "./trust-badge";
 import { Star, MapPin } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 
@@ -72,11 +73,12 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
             </div>
           )}
 
-          {/* Veg Types */}
-          <div className="flex flex-wrap gap-1">
+          {/* Veg Types + Trust Badge */}
+          <div className="flex flex-wrap gap-1 items-center">
             {restaurant.vegetarian_types.map((type) => (
               <VegTypeBadge key={type} type={type} />
             ))}
+            <TrustBadge isVerified={restaurant.is_verified} />
           </div>
         </CardContent>
       </Card>

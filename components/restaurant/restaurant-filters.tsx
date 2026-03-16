@@ -8,10 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { SearchAutocomplete } from "./search-autocomplete";
+import { X } from "lucide-react";
 import {
   VEGETARIAN_TYPES,
   TAIPEI_DISTRICTS,
@@ -38,8 +38,9 @@ export function RestaurantFiltersBar({
     onFiltersChange({ ...filters, vegetarianTypes: updated });
   };
 
-  const handleSearch = () => {
-    onFiltersChange({ ...filters, search: searchInput || undefined });
+  const handleSearch = (value: string) => {
+    setSearchInput(value);
+    onFiltersChange({ ...filters, search: value || undefined });
   };
 
   const clearFilters = () => {
@@ -55,19 +56,14 @@ export function RestaurantFiltersBar({
 
   return (
     <div className="space-y-4">
-      {/* Search */}
+      {/* Search with Autocomplete */}
       <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search restaurants..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="pl-9"
-          />
-        </div>
-        <Button onClick={handleSearch} size="default">
+        <SearchAutocomplete
+          value={searchInput}
+          onChange={setSearchInput}
+          onSearch={handleSearch}
+        />
+        <Button onClick={() => handleSearch(searchInput)} size="default">
           Search
         </Button>
       </div>
@@ -150,6 +146,7 @@ export function RestaurantFiltersBar({
           <SelectContent>
             <SelectItem value="rating">Highest Rated</SelectItem>
             <SelectItem value="reviews">Most Reviews</SelectItem>
+            <SelectItem value="english_friendly">English Friendly</SelectItem>
             <SelectItem value="name">Name (A-Z)</SelectItem>
           </SelectContent>
         </Select>

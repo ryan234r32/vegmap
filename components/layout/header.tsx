@@ -11,8 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Menu, User, LogOut, Heart, Star } from "lucide-react";
+import { MapPin, Menu, User, LogOut, Heart, Star, Shield } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useState } from "react";
 
 const NAV_LINKS = [
@@ -21,7 +22,7 @@ const NAV_LINKS = [
 ];
 
 export function Header() {
-  const { user, profile, signOut, signInWithGoogle, loading } = useAuth();
+  const { user, profile, signOut, signInWithGoogle, loading, isAdmin } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -47,6 +48,7 @@ export function Header() {
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
+          <ThemeToggle />
           {/* Auth */}
           {!loading && (
             <>
@@ -87,6 +89,14 @@ export function Header() {
                         Favorites
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem>
+                        <Link href="/admin" className="flex items-center w-full">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />

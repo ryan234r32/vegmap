@@ -63,3 +63,59 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ data, error: null });
 }
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { data: null, error: "Must be logged in to suggest a restaurant" },
+      { status: 401 }
+    );
+  }
+
+  const body = await request.json();
+  const { name_en, name_zh, address_en, address_zh, district, price_range, vegetarian_types, website, description_en } = body;
+
+  if (!name_en || !vegetarian_types?.length) {
+    return NextResponse.json(
+      { data: null, error: "name_en and vegetarian_types are required" },
+      { status: 400 }
+    );
+  }
+
+  const slug = name_en
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    + "-" + Date.now().toString(36);
+
+  const { data, error } = await supabase
+    .from("restaurants")
+    .insert({
+      name_en,
+      name_zh: name_zh || null,
+      slug,
+      address_en: address_en || null,
+      address_zh: address_zh || null,
+      district: district || null,
+      price_range: price_range || null,
+      vegetarian_types,
+      website: website || null,
+      description_en: description_en || null,
+      is_verified: false,
+      is_active: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ data: null, error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ data, error: null }, { status: 201 });
+}
