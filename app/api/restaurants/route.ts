@@ -2,13 +2,20 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { transformRestaurantLocations } from "@/lib/geo";
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const supabase = await createClient();
+const BASE_SELECT = "id,name_en,name_zh,slug,district,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified";
+const MRT_SELECT = `${BASE_SELECT},nearest_mrt`;
 
+// Cache whether nearest_mrt column exists (persists across requests in the same serverless instance)
+let mrtColumnAvailable: boolean | null = null;
+
+function buildQuery(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  selectColumns: string,
+  searchParams: URLSearchParams
+) {
   let query = supabase
     .from("restaurants")
-    .select("id,name_en,name_zh,slug,district,nearest_mrt,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified")
+    .select(selectColumns)
     .eq("is_active", true);
 
   const vegTypes = searchParams.get("vegTypes");
@@ -24,11 +31,14 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const mrtStations = searchParams.get("mrtStations");
-  if (mrtStations) {
-    const stationList = mrtStations.split(",").filter(Boolean);
-    if (stationList.length > 0) {
-      query = query.in("nearest_mrt", stationList);
+  // Only apply MRT filter if column is known to exist
+  if (mrtColumnAvailable !== false) {
+    const mrtStations = searchParams.get("mrtStations");
+    if (mrtStations) {
+      const stationList = mrtStations.split(",").filter(Boolean);
+      if (stationList.length > 0) {
+        query = query.in("nearest_mrt", stationList);
+      }
     }
   }
 
@@ -47,7 +57,6 @@ export async function GET(request: NextRequest) {
 
   const search = searchParams.get("search")?.slice(0, 100);
   if (search) {
-    // Escape special Supabase filter characters to prevent injection
     const safe = search.replace(/[%_\\]/g, "\\$&");
     query = query.or(
       `name_en.ilike.%${safe}%,name_zh.ilike.%${safe}%,description_en.ilike.%${safe}%`
@@ -75,13 +84,35 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "1000", 10), 1000);
   query = query.limit(limit);
 
-  const { data, error } = await query;
+  return query;
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const supabase = await createClient();
+
+  // Try with MRT column first, fall back without if column doesn't exist
+  const selectColumns = mrtColumnAvailable === false ? BASE_SELECT : MRT_SELECT;
+  const result = await buildQuery(supabase, selectColumns, searchParams);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any[] | null = result.data;
+  let error = result.error;
+
+  if (error && mrtColumnAvailable !== false) {
+    // Column likely doesn't exist yet — retry without it
+    mrtColumnAvailable = false;
+    const fallback = await buildQuery(supabase, BASE_SELECT, searchParams);
+    data = fallback.data;
+    error = fallback.error;
+  } else if (!error && mrtColumnAvailable === null) {
+    mrtColumnAvailable = true;
+  }
 
   if (error) {
     return NextResponse.json({ data: null, error: "Failed to fetch restaurants" }, { status: 500 });
   }
 
-  const transformed = transformRestaurantLocations(data ?? []);
+  const transformed = transformRestaurantLocations((data ?? []) as Record<string, unknown>[]);
 
   return NextResponse.json(
     { data: transformed, error: null },
