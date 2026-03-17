@@ -61,7 +61,15 @@ function ClusteredMarkers({
       markersRef.current = [];
 
       if (!clusterer.current) {
-        clusterer.current = new MarkerClusterer({ map });
+        clusterer.current = new MarkerClusterer({
+          map,
+          onClusterClick: (_event, cluster, _map) => {
+            // Zoom into the cluster to expand it
+            if (cluster.bounds) {
+              _map.fitBounds(cluster.bounds, { bottom: 200, top: 60, left: 20, right: 20 });
+            }
+          },
+        });
       }
 
       const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
@@ -80,7 +88,24 @@ function ClusteredMarkers({
         });
 
         const r = restaurant;
-        marker.addEventListener("gmp-click", () => onClickRef.current(r));
+        marker.addEventListener("gmp-click", () => {
+          onClickRef.current(r);
+          // Pan map so marker appears in the upper portion of the viewport
+          // (above the bottom sheet)
+          if (r.location && map) {
+            const zoom = map.getZoom() ?? 14;
+            // Shift center south so marker appears above center
+            // ~80px offset adjusted for zoom level
+            const metersPerPx =
+              (156543.03392 * Math.cos((r.location.lat * Math.PI) / 180)) /
+              Math.pow(2, zoom);
+            const offsetLat = (80 * metersPerPx) / 111320;
+            map.panTo({
+              lat: r.location.lat - offsetLat,
+              lng: r.location.lng,
+            });
+          }
+        });
         newMarkers.push(marker);
       }
 

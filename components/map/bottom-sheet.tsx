@@ -9,11 +9,14 @@ export type { SheetPosition };
 interface BottomSheetProps {
   children: React.ReactNode;
   peekContent?: React.ReactNode;
+  peekHeight?: number;
   className?: string;
   onPositionChange?: (position: SheetPosition) => void;
+  onDismiss?: () => void;
+  resetKey?: string;
 }
 
-const PEEK_HEIGHT = 180;
+const DEFAULT_PEEK_HEIGHT = 180;
 const HALF_RATIO = 0.5;
 const FULL_RATIO = 0.92;
 const VELOCITY_THRESHOLD = 0.3;
@@ -21,13 +24,17 @@ const VELOCITY_THRESHOLD = 0.3;
 export function BottomSheet({
   children,
   peekContent,
+  peekHeight = DEFAULT_PEEK_HEIGHT,
   className = "",
   onPositionChange,
+  onDismiss,
+  resetKey,
 }: BottomSheetProps) {
   const [position, setPosition] = useState<SheetPosition>("peek");
   const [translateY, setTranslateY] = useState(0);
   const [viewportH, setViewportH] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const prevResetKey = useRef(resetKey);
 
   const drag = useRef({
     active: false,
@@ -44,19 +51,27 @@ export function BottomSheet({
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  // Reset to peek when resetKey changes (e.g. switching list↔detail)
+  useEffect(() => {
+    if (resetKey !== prevResetKey.current) {
+      prevResetKey.current = resetKey;
+      setPosition("peek");
+    }
+  }, [resetKey]);
+
   const getTargetY = useCallback(
     (pos: SheetPosition) => {
       if (!viewportH) return 0;
       switch (pos) {
         case "peek":
-          return viewportH - PEEK_HEIGHT;
+          return viewportH - peekHeight;
         case "half":
           return viewportH * (1 - HALF_RATIO);
         case "full":
           return viewportH * (1 - FULL_RATIO);
       }
     },
-    [viewportH]
+    [viewportH, peekHeight]
   );
 
   // Snap to position when not dragging
@@ -70,7 +85,6 @@ export function BottomSheet({
   // --- Pointer-based drag (unified touch + mouse) ---
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
-      // Capture pointer so all move/up events come to this element
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       drag.current = {
         active: true,
@@ -91,7 +105,7 @@ export function BottomSheet({
       const diff = e.clientY - drag.current.startY;
       const newY = Math.max(
         getTargetY("full"),
-        Math.min(viewportH - 60, drag.current.startTranslate + diff)
+        Math.min(viewportH - 40, drag.current.startTranslate + diff)
       );
       setTranslateY(newY);
     },
@@ -108,7 +122,7 @@ export function BottomSheet({
 
       const totalMove = Math.abs(d.currentY - d.startY);
 
-      // Tap → toggle
+      // Tap → toggle peek↔half
       if (totalMove < 5) {
         setPosition((prev) => (prev === "peek" ? "half" : "peek"));
         return;
@@ -117,6 +131,12 @@ export function BottomSheet({
       // Flick detection
       const elapsed = Date.now() - d.startTime;
       const velocity = elapsed > 0 ? (d.currentY - d.startY) / elapsed : 0;
+
+      // Flick down from peek → dismiss (return to list mode)
+      if (velocity > VELOCITY_THRESHOLD && position === "peek" && onDismiss) {
+        onDismiss();
+        return;
+      }
 
       if (Math.abs(velocity) > VELOCITY_THRESHOLD) {
         if (velocity > 0) {
@@ -127,11 +147,18 @@ export function BottomSheet({
         return;
       }
 
-      // Snap to nearest — calculate current Y from drag ref (no stale closure)
+      // Snap to nearest
       const currentY = Math.max(
         getTargetY("full"),
-        Math.min(viewportH - 60, d.startTranslate + (d.currentY - d.startY))
+        Math.min(viewportH - 40, d.startTranslate + (d.currentY - d.startY))
       );
+
+      // Dragged below peek → dismiss
+      if (currentY > getTargetY("peek") + 50 && onDismiss) {
+        onDismiss();
+        return;
+      }
+
       const positions: { pos: SheetPosition; y: number }[] = [
         { pos: "peek", y: getTargetY("peek") },
         { pos: "half", y: getTargetY("half") },
@@ -142,14 +169,14 @@ export function BottomSheet({
       );
       setPosition(positions[0].pos);
     },
-    [getTargetY, viewportH]
+    [getTargetY, viewportH, position, onDismiss]
   );
 
   if (!viewportH) return null;
 
   return (
     <div
-      className={`fixed left-0 right-0 bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-40 will-change-transform ${className}`}
+      className="fixed left-0 right-0 z-40"
       style={{
         transform: `translateY(${translateY}px)`,
         transition: isDragging
@@ -157,38 +184,38 @@ export function BottomSheet({
           : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
         height: `${viewportH}px`,
         top: 0,
+        pointerEvents: "none",
       }}
     >
-      {/* Drag Handle — 48px touch target, pointer events for mouse+touch */}
+      {/* Inner content — only this area receives pointer events */}
       <div
-        className="touch-none select-none cursor-grab active:cursor-grabbing"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
+        className={`bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] h-full will-change-transform ${className}`}
+        style={{ pointerEvents: "auto" }}
       >
-        <div className="flex justify-center py-5">
-          <div className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
-        </div>
-      </div>
-
-      {/* Peek Content — tap to expand, horizontal scroll preserved for badges */}
-      {peekContent && (
+        {/* Drag Handle — 46px touch target */}
         <div
-          className="px-4 pb-3"
-          onClick={() =>
-            setPosition((prev) => (prev === "peek" ? "half" : "peek"))
-          }
+          className="touch-none select-none cursor-grab active:cursor-grabbing"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
         >
-          {peekContent}
+          <div className="flex justify-center py-5">
+            <div className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
+          </div>
         </div>
-      )}
 
-      {/* Scrollable Content */}
-      <div
-        className="overflow-y-auto px-4 pb-safe overscroll-contain"
-        style={{ height: `calc(100% - ${PEEK_HEIGHT}px)` }}
-      >
-        {children}
+        {/* Peek Content */}
+        {peekContent && (
+          <div className="px-4 pb-3">{peekContent}</div>
+        )}
+
+        {/* Scrollable Content */}
+        <div
+          className="overflow-y-auto px-4 pb-safe overscroll-contain"
+          style={{ height: `calc(100% - ${peekHeight}px)` }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
