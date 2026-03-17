@@ -61,8 +61,12 @@ export function ReviewForm({
     if (err) {
       if (err.code === "23505") {
         setError("You have already reviewed this restaurant");
+      } else if (err.code === "42501" || err.message?.includes("policy")) {
+        setError("Permission denied. Please sign in and try again.");
+      } else if (err.message?.includes("fetch") || err.message?.includes("network")) {
+        setError("Network error. Please check your connection and try again.");
       } else {
-        setError(err.message);
+        setError("Something went wrong. Please try again.");
       }
     } else {
       onSuccess();

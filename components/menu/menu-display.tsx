@@ -22,7 +22,16 @@ const statusLabels: Record<string, string> = {
 };
 
 export function MenuDisplay({ menu }: MenuDisplayProps) {
-  const groupedItems = menu.items.reduce(
+  const items = menu.items ?? [];
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-6 text-muted-foreground text-sm">
+        <p>Menu items are being processed...</p>
+      </div>
+    );
+  }
+
+  const groupedItems = items.reduce(
     (acc, item) => {
       const category = item.category ?? "Other";
       if (!acc[category]) acc[category] = [];
@@ -73,7 +82,7 @@ export function MenuDisplay({ menu }: MenuDisplayProps) {
                       {item.description_en}
                     </p>
                   )}
-                  {item.allergens.length > 0 && (
+                  {(item.allergens?.length ?? 0) > 0 && (
                     <div className="flex gap-1 mt-1">
                       {item.allergens.map((a) => (
                         <Badge
