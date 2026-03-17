@@ -474,13 +474,19 @@ function DetailPeekContent({
           )}
 
           <div className="flex items-center gap-2 mt-1">
-            {restaurant.avg_rating > 0 && (
+            {restaurant.avg_rating > 0 ? (
               <div className="flex items-center gap-0.5">
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                 <span className="text-xs font-medium">{restaurant.avg_rating}</span>
                 <span className="text-xs text-muted-foreground">({restaurant.review_count})</span>
               </div>
-            )}
+            ) : restaurant.google_rating ? (
+              <div className="flex items-center gap-0.5">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs font-medium">{restaurant.google_rating}</span>
+                <span className="text-[10px] text-muted-foreground">Google</span>
+              </div>
+            ) : null}
             {distance !== null && (
               <span className="text-xs text-muted-foreground">
                 {distance < 1
@@ -643,13 +649,19 @@ function DesktopPreviewCard({
               <p className="text-xs text-muted-foreground truncate">{restaurant.name_zh}</p>
             )}
             <div className="flex items-center gap-2 mt-1">
-              {restaurant.avg_rating > 0 && (
+              {restaurant.avg_rating > 0 ? (
                 <div className="flex items-center gap-0.5">
                   <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                   <span className="text-xs font-medium">{restaurant.avg_rating}</span>
                   <span className="text-xs text-muted-foreground">({restaurant.review_count})</span>
                 </div>
-              )}
+              ) : restaurant.google_rating ? (
+                <div className="flex items-center gap-0.5">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-medium">{restaurant.google_rating}</span>
+                  <span className="text-[10px] text-muted-foreground">Google</span>
+                </div>
+              ) : null}
               {distance !== null && (
                 <span className="text-xs text-muted-foreground">
                   {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
@@ -716,13 +728,19 @@ function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
           <p className="text-xs text-muted-foreground truncate">{restaurant.name_zh}</p>
         )}
         <div className="flex items-center gap-2 mt-0.5">
-          {restaurant.avg_rating > 0 && (
+          {restaurant.avg_rating > 0 ? (
             <div className="flex items-center gap-0.5">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               <span className="text-xs font-medium">{restaurant.avg_rating}</span>
               <span className="text-xs text-muted-foreground">({restaurant.review_count})</span>
             </div>
-          )}
+          ) : restaurant.google_rating ? (
+            <div className="flex items-center gap-0.5">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-medium">{restaurant.google_rating}</span>
+              <span className="text-[10px] text-muted-foreground">Google</span>
+            </div>
+          ) : null}
           {restaurant.nearest_mrt ? (() => {
             const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
             const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { transformRestaurantLocations } from "@/lib/geo";
 
-const BASE_SELECT = "id,name_en,name_zh,slug,district,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified";
+const BASE_SELECT = "id,name_en,name_zh,slug,district,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,google_rating,cover_image_url,location,address_en,is_verified";
 const MRT_SELECT = `${BASE_SELECT},nearest_mrt`;
 
 // Cache whether nearest_mrt column exists (persists across requests in the same serverless instance)

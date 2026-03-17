@@ -82,9 +82,9 @@ export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCar
             </p>
           )}
 
-          {/* Rating */}
+          {/* Rating — show VegMap rating if available, otherwise Google rating */}
           <div className="flex items-center gap-2 mb-2">
-            {restaurant.avg_rating > 0 && (
+            {restaurant.avg_rating > 0 ? (
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm font-medium">
@@ -94,7 +94,15 @@ export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCar
                   ({restaurant.review_count})
                 </span>
               </div>
-            )}
+            ) : restaurant.google_rating ? (
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-medium">
+                  {restaurant.google_rating}
+                </span>
+                <span className="text-xs text-muted-foreground">Google</span>
+              </div>
+            ) : null}
           </div>
 
           {/* Location: District + Nearest MRT */}
