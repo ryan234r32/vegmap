@@ -28,6 +28,7 @@ export default function HomePage() {
   const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const { restaurants, loading } = useRestaurants(filters);
   const {
     lat,
@@ -56,6 +57,11 @@ export default function HomePage() {
   }, []);
 
   const userLocation = lat && lng ? { lat, lng } : null;
+
+  const handleFavoriteNeedAuth = useCallback(() => {
+    setShowAuthPrompt(true);
+    setTimeout(() => setShowAuthPrompt(false), 4000);
+  }, []);
 
   const handleOnboardingComplete = useCallback(
     (diet: VegetarianType | null, shouldLocate: boolean) => {
@@ -153,7 +159,7 @@ export default function HomePage() {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {displayRestaurants.slice(0, visibleCount).map((restaurant) => (
-                      <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                      <RestaurantCard key={restaurant.id} restaurant={restaurant} onFavoriteNeedAuth={handleFavoriteNeedAuth} />
                     ))}
                   </div>
                   {visibleCount < displayRestaurants.length && (
@@ -177,7 +183,7 @@ export default function HomePage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {displayRestaurants.slice(0, 6).map((restaurant) => (
-                  <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                  <RestaurantCard key={restaurant.id} restaurant={restaurant} onFavoriteNeedAuth={handleFavoriteNeedAuth} />
                 ))}
               </div>
               {displayRestaurants.length > 6 && (
@@ -355,6 +361,21 @@ export default function HomePage() {
       <div className="hidden md:block">
         <Footer />
       </div>
+
+      {/* Sign-in prompt when unauthenticated user tries to favorite */}
+      {showAuthPrompt && (
+        <div className="fixed bottom-6 left-4 right-4 z-50 md:left-auto md:right-6 md:max-w-sm animate-in slide-in-from-bottom-4 duration-200">
+          <div className="bg-foreground text-background rounded-xl px-4 py-3 shadow-lg flex items-center justify-between gap-3">
+            <p className="text-sm">Save your favorites — sign in first!</p>
+            <Link
+              href="/auth/login"
+              className="text-sm font-semibold whitespace-nowrap underline underline-offset-2"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
