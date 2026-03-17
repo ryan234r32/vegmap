@@ -13,16 +13,29 @@ interface BottomSheetProps {
   onPositionChange?: (position: SheetPosition) => void;
 }
 
-const PEEK_HEIGHT = 140;
+const PEEK_HEIGHT = 180;
 const HALF_RATIO = 0.5;
 const FULL_RATIO = 0.92;
+const VELOCITY_THRESHOLD = 0.3;
 
-export function BottomSheet({ children, peekContent, className = "", onPositionChange }: BottomSheetProps) {
+export function BottomSheet({
+  children,
+  peekContent,
+  className = "",
+  onPositionChange,
+}: BottomSheetProps) {
   const [position, setPosition] = useState<SheetPosition>("peek");
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef({ startY: 0, startTranslate: 0, dragging: false });
   const [translateY, setTranslateY] = useState(0);
   const [viewportH, setViewportH] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const drag = useRef({
+    active: false,
+    startY: 0,
+    startTranslate: 0,
+    currentY: 0,
+    startTime: 0,
+  });
 
   useEffect(() => {
     const update = () => setViewportH(window.innerHeight);
@@ -46,78 +59,133 @@ export function BottomSheet({ children, peekContent, className = "", onPositionC
     [viewportH]
   );
 
-  // Snap to position and notify parent
+  // Snap to position when not dragging
   useEffect(() => {
-    setTranslateY(getTargetY(position));
+    if (!isDragging) {
+      setTranslateY(getTargetY(position));
+    }
     onPositionChange?.(position);
-  }, [position, getTargetY, onPositionChange]);
+  }, [position, getTargetY, onPositionChange, isDragging]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    dragRef.current = {
-      startY: e.touches[0].clientY,
-      startTranslate: translateY,
-      dragging: true,
-    };
-  };
+  // --- Pointer-based drag (unified touch + mouse) ---
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      // Capture pointer so all move/up events come to this element
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      drag.current = {
+        active: true,
+        startY: e.clientY,
+        startTranslate: translateY,
+        currentY: e.clientY,
+        startTime: Date.now(),
+      };
+      setIsDragging(true);
+    },
+    [translateY]
+  );
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragRef.current.dragging) return;
-    const diff = e.touches[0].clientY - dragRef.current.startY;
-    const newY = Math.max(
-      getTargetY("full"),
-      Math.min(viewportH - 60, dragRef.current.startTranslate + diff)
-    );
-    setTranslateY(newY);
-  };
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!drag.current.active) return;
+      drag.current.currentY = e.clientY;
+      const diff = e.clientY - drag.current.startY;
+      const newY = Math.max(
+        getTargetY("full"),
+        Math.min(viewportH - 60, drag.current.startTranslate + diff)
+      );
+      setTranslateY(newY);
+    },
+    [getTargetY, viewportH]
+  );
 
-  const handleTouchEnd = () => {
-    if (!dragRef.current.dragging) return;
-    dragRef.current.dragging = false;
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      const d = drag.current;
+      if (!d.active) return;
+      d.active = false;
+      setIsDragging(false);
 
-    // Snap to nearest position
-    const peekY = getTargetY("peek");
-    const halfY = getTargetY("half");
-    const fullY = getTargetY("full");
+      const totalMove = Math.abs(d.currentY - d.startY);
 
-    const distances = [
-      { pos: "peek" as const, d: Math.abs(translateY - peekY) },
-      { pos: "half" as const, d: Math.abs(translateY - halfY) },
-      { pos: "full" as const, d: Math.abs(translateY - fullY) },
-    ];
-    distances.sort((a, b) => a.d - b.d);
-    setPosition(distances[0].pos);
-  };
+      // Tap → toggle
+      if (totalMove < 5) {
+        setPosition((prev) => (prev === "peek" ? "half" : "peek"));
+        return;
+      }
+
+      // Flick detection
+      const elapsed = Date.now() - d.startTime;
+      const velocity = elapsed > 0 ? (d.currentY - d.startY) / elapsed : 0;
+
+      if (Math.abs(velocity) > VELOCITY_THRESHOLD) {
+        if (velocity > 0) {
+          setPosition((prev) => (prev === "full" ? "half" : "peek"));
+        } else {
+          setPosition((prev) => (prev === "peek" ? "half" : "full"));
+        }
+        return;
+      }
+
+      // Snap to nearest — calculate current Y from drag ref (no stale closure)
+      const currentY = Math.max(
+        getTargetY("full"),
+        Math.min(viewportH - 60, d.startTranslate + (d.currentY - d.startY))
+      );
+      const positions: { pos: SheetPosition; y: number }[] = [
+        { pos: "peek", y: getTargetY("peek") },
+        { pos: "half", y: getTargetY("half") },
+        { pos: "full", y: getTargetY("full") },
+      ];
+      positions.sort(
+        (a, b) => Math.abs(currentY - a.y) - Math.abs(currentY - b.y)
+      );
+      setPosition(positions[0].pos);
+    },
+    [getTargetY, viewportH]
+  );
 
   if (!viewportH) return null;
 
   return (
     <div
-      ref={sheetRef}
-      className={`fixed left-0 right-0 bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-40 ${className}`}
+      className={`fixed left-0 right-0 bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-40 will-change-transform ${className}`}
       style={{
         transform: `translateY(${translateY}px)`,
-        transition: dragRef.current.dragging ? "none" : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: isDragging
+          ? "none"
+          : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
         height: `${viewportH}px`,
         top: 0,
       }}
     >
-      {/* Drag Handle */}
+      {/* Drag Handle — 48px touch target, pointer events for mouse+touch */}
       <div
-        className="flex justify-center pt-2 pb-3 cursor-grab active:cursor-grabbing touch-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => setPosition(position === "peek" ? "half" : "peek")}
+        className="touch-none select-none cursor-grab active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
       >
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        <div className="flex justify-center py-5">
+          <div className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
+        </div>
       </div>
 
-      {/* Peek Content (always visible) */}
-      {peekContent && <div className="px-4 pb-2">{peekContent}</div>}
+      {/* Peek Content — tap to expand, horizontal scroll preserved for badges */}
+      {peekContent && (
+        <div
+          className="px-4 pb-3"
+          onClick={() =>
+            setPosition((prev) => (prev === "peek" ? "half" : "peek"))
+          }
+        >
+          {peekContent}
+        </div>
+      )}
 
       {/* Scrollable Content */}
       <div
-        className="overflow-y-auto px-4 pb-safe"
+        className="overflow-y-auto px-4 pb-safe overscroll-contain"
         style={{ height: `calc(100% - ${PEEK_HEIGHT}px)` }}
       >
         {children}

@@ -148,6 +148,7 @@ export function MapContainer({
         className={className}
         gestureHandling="greedy"
         disableDefaultUI={false}
+        clickableIcons={false}
       >
         <ClusteredMarkers
           restaurants={restaurants}

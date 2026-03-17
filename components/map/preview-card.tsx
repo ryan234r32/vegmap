@@ -38,7 +38,7 @@ export function PreviewCard({ restaurant, onClose, userLocation }: PreviewCardPr
     : null;
 
   return (
-    <div className="fixed bottom-[152px] left-3 right-3 z-[45] md:absolute md:bottom-4 md:left-4 md:right-auto md:w-[360px] md:z-10 animate-in slide-in-from-bottom-4 duration-200">
+    <div className="fixed bottom-[192px] left-3 right-3 z-[45] md:absolute md:bottom-4 md:left-4 md:right-auto md:w-[360px] md:z-10 animate-in slide-in-from-bottom-4 duration-200">
       <div className="bg-background rounded-xl shadow-lg border overflow-hidden">
         <div className="flex">
           {/* Image */}
@@ -66,7 +66,7 @@ export function PreviewCard({ restaurant, onClose, userLocation }: PreviewCardPr
               </h3>
               <button
                 onClick={onClose}
-                className="p-0.5 rounded-full hover:bg-muted flex-shrink-0 cursor-pointer"
+                className="p-2 -mr-1 -mt-1 rounded-full hover:bg-muted flex-shrink-0 cursor-pointer"
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>

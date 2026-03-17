@@ -20,10 +20,12 @@ import { WelcomeSheet } from "@/components/onboarding/welcome-sheet";
 import type { RestaurantFilters, Restaurant, VegetarianType } from "@/lib/types";
 
 const PAGE_SIZE = 24;
+const MOBILE_PAGE_SIZE = 30;
 
 export default function HomePage() {
   const [filters, setFilters] = useState<RestaurantFilters>({});
   const [view, setView] = useState<"map" | "list">("map");
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const { restaurants, loading } = useRestaurants(filters);
@@ -247,7 +249,7 @@ export default function HomePage() {
             <Button
               size="icon"
               variant="secondary"
-              className="h-10 w-10 rounded-full shadow-md"
+              className="h-11 w-11 rounded-full shadow-md"
               onClick={requestLocation}
               disabled={geoLoading}
             >
@@ -290,12 +292,14 @@ export default function HomePage() {
                         key={type.value}
                         variant={isActive ? "default" : "outline"}
                         className="cursor-pointer select-none whitespace-nowrap text-xs flex-shrink-0"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const current = filters.vegetarianTypes ?? [];
                           const updated = current.includes(type.value)
                             ? current.filter((t) => t !== type.value)
                             : [...current, type.value];
                           setFilters({ ...filters, vegetarianTypes: updated });
+                          setMobileVisibleCount(MOBILE_PAGE_SIZE);
                         }}
                       >
                         {type.emoji} {type.label}
@@ -308,9 +312,20 @@ export default function HomePage() {
           >
             {/* Bottom sheet scrollable content */}
             <div className="space-y-0 -mx-4">
-              {displayRestaurants.map((restaurant) => (
+              {displayRestaurants.slice(0, mobileVisibleCount).map((restaurant) => (
                 <CompactRestaurantItem key={restaurant.id} restaurant={restaurant} />
               ))}
+              {mobileVisibleCount < displayRestaurants.length && (
+                <div className="text-center py-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMobileVisibleCount((c) => c + MOBILE_PAGE_SIZE)}
+                  >
+                    Show More ({displayRestaurants.length - mobileVisibleCount} remaining)
+                  </Button>
+                </div>
+              )}
               {displayRestaurants.length === 0 && !loading && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">No restaurants found.</p>
