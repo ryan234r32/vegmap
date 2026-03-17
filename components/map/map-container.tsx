@@ -33,92 +33,80 @@ function ClusteredMarkers({
 }) {
   const map = useMap();
   const clusterer = useRef<MarkerClusterer | null>(null);
-  const markersRef = useRef<globalThis.Map<string, google.maps.marker.AdvancedMarkerElement>>(new globalThis.Map());
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
 
-  // Initialize clusterer
   useEffect(() => {
     if (!map) return;
-    if (!clusterer.current) {
-      clusterer.current = new MarkerClusterer({
-        map,
-        renderer: {
-          render: ({ count, position }) => {
-            const el = document.createElement("div");
-            el.style.cssText = `
-              background: #16a34a;
-              color: white;
-              border-radius: 50%;
-              width: ${count > 50 ? 48 : count > 20 ? 40 : 36}px;
-              height: ${count > 50 ? 48 : count > 20 ? 40 : 36}px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: ${count > 50 ? 14 : 12}px;
-              font-weight: bold;
-              border: 3px solid white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            `;
-            el.textContent = String(count);
 
-            return new google.maps.marker.AdvancedMarkerElement({
-              position,
-              content: el,
-              zIndex: count,
-            });
-          },
-        },
-      });
-    }
-  }, [map]);
+    let cancelled = false;
 
-  // Update markers when restaurants change
-  useEffect(() => {
-    if (!clusterer.current) return;
+    // Load the marker library, then create all markers imperatively
+    google.maps.importLibrary("marker").then((lib) => {
+      if (cancelled) return;
 
-    // Clear old markers
-    clusterer.current.clearMarkers();
-    markersRef.current.clear();
+      const markerLib = lib as google.maps.MarkerLibrary;
 
-    const markers: google.maps.marker.AdvancedMarkerElement[] = [];
+      // Clean up previous markers
+      if (clusterer.current) {
+        clusterer.current.clearMarkers();
+      }
+      for (const m of markersRef.current) {
+        m.map = null;
+      }
+      markersRef.current = [];
 
-    for (const restaurant of restaurants) {
-      if (!restaurant.location) continue;
+      // Create clusterer if needed
+      if (!clusterer.current) {
+        clusterer.current = new MarkerClusterer({ map });
+      }
 
-      const el = document.createElement("div");
-      el.style.cssText = `
-        background: #16a34a;
-        color: white;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: bold;
-        border: 2px solid white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        cursor: pointer;
-      `;
-      el.textContent = "🌱";
+      // Create markers
+      const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
 
-      const marker = new google.maps.marker.AdvancedMarkerElement({
-        position: restaurant.location,
-        content: el,
-        title: restaurant.name_en,
-      });
+      for (const restaurant of restaurants) {
+        if (!restaurant.location) continue;
 
-      marker.addListener("click", () => onMarkerClick(restaurant));
-      markers.push(marker);
-      markersRef.current.set(restaurant.id, marker);
-    }
+        const el = document.createElement("div");
+        el.style.cssText = `
+          background: #16a34a;
+          color: white;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          cursor: pointer;
+        `;
+        el.textContent = "🌱";
 
-    clusterer.current.addMarkers(markers);
+        const marker = new markerLib.AdvancedMarkerElement({
+          position: restaurant.location,
+          content: el,
+          title: restaurant.name_en,
+        });
+
+        marker.addEventListener("gmp-click", () => onMarkerClick(restaurant));
+        newMarkers.push(marker);
+      }
+
+      markersRef.current = newMarkers;
+      clusterer.current.addMarkers(newMarkers);
+    });
 
     return () => {
+      cancelled = true;
       clusterer.current?.clearMarkers();
+      for (const m of markersRef.current) {
+        m.map = null;
+      }
+      markersRef.current = [];
     };
-  }, [restaurants, onMarkerClick]);
+  }, [map, restaurants, onMarkerClick]);
 
   return null;
 }

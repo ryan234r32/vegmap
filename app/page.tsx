@@ -98,7 +98,7 @@ export default function HomePage() {
             <MapContainer
               restaurants={displayRestaurants}
               userLocation={lat && lng ? { lat, lng } : null}
-              className="w-full h-[500px] md:h-[600px] rounded-lg overflow-hidden"
+              className="w-full h-[300px] sm:h-[400px] md:h-[600px] rounded-lg overflow-hidden"
             />
           )}
 

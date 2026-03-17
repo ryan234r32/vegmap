@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { RestaurantDetail } from "./restaurant-detail";
 import { RestaurantJsonLd } from "@/components/restaurant/json-ld";
+import { parseWkbPoint } from "@/lib/geo";
 import type { Metadata } from "next";
 
 interface Props {
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient();
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("name_en, description_en, district, vegetarian_types")
+    .select("name_en, description_en, district, vegetarian_types, cover_image_url")
     .eq("slug", slug)
     .eq("is_active", true)
     .single();
@@ -21,17 +22,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!restaurant) return { title: "Restaurant Not Found" };
 
   const vegTypes = (restaurant.vegetarian_types as string[])?.join(", ") ?? "";
+  const desc =
+    restaurant.description_en ??
+    `${restaurant.name_en} - ${vegTypes} restaurant in ${restaurant.district ?? "Taipei"}. Find English menu, reviews, and directions.`;
 
   return {
     title: restaurant.name_en,
-    description:
-      restaurant.description_en ??
-      `${restaurant.name_en} - ${vegTypes} restaurant in ${restaurant.district ?? "Taipei"}. Find English menu, reviews, and directions.`,
+    description: desc,
+    alternates: {
+      canonical: `/restaurants/${slug}`,
+    },
     openGraph: {
       title: `${restaurant.name_en} | VegMap`,
-      description:
-        restaurant.description_en ??
-        `Vegetarian restaurant in ${restaurant.district ?? "Taipei"}`,
+      description: desc,
+      ...(restaurant.cover_image_url && {
+        images: [{ url: restaurant.cover_image_url, width: 800, height: 600 }],
+      }),
     },
   };
 }
@@ -48,6 +54,9 @@ export default async function RestaurantPage({ params }: Props) {
     .single();
 
   if (!restaurant) notFound();
+
+  // Transform PostGIS WKB location to {lat, lng}
+  restaurant.location = parseWkbPoint(restaurant.location as unknown as string);
 
   const { data: reviews } = await supabase
     .from("reviews")

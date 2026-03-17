@@ -38,6 +38,9 @@ self.addEventListener("fetch", (event) => {
   // Skip non-GET requests
   if (request.method !== "GET") return;
 
+  // Skip dev server requests (HMR, Turbopack, _next)
+  if (url.pathname.startsWith("/_next/") || url.pathname.includes("__turbopack")) return;
+
   // Skip API routes and auth
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return;
 

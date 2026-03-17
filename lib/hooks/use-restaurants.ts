@@ -1,66 +1,37 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, RestaurantFilters, NearbyParams } from "@/lib/types";
 
 export function useRestaurants(filters?: RestaurantFilters) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   const fetchRestaurants = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    let query = supabase
-      .from("restaurants")
-      .select("*")
-      .eq("is_active", true);
-
+    const params = new URLSearchParams();
     if (filters?.vegetarianTypes && filters.vegetarianTypes.length > 0) {
-      query = query.overlaps("vegetarian_types", filters.vegetarianTypes);
+      params.set("vegTypes", filters.vegetarianTypes.join(","));
     }
+    if (filters?.district) params.set("district", filters.district);
+    if (filters?.priceRange) params.set("priceRange", filters.priceRange);
+    if (filters?.minRating) params.set("minRating", String(filters.minRating));
+    if (filters?.search) params.set("search", filters.search);
+    if (filters?.sortBy) params.set("sortBy", filters.sortBy);
 
-    if (filters?.district) {
-      query = query.eq("district", filters.district);
-    }
-
-    if (filters?.priceRange) {
-      query = query.eq("price_range", filters.priceRange);
-    }
-
-    if (filters?.minRating) {
-      query = query.gte("avg_rating", filters.minRating);
-    }
-
-    if (filters?.search) {
-      query = query.or(
-        `name_en.ilike.%${filters.search}%,name_zh.ilike.%${filters.search}%,description_en.ilike.%${filters.search}%`
-      );
-    }
-
-    switch (filters?.sortBy) {
-      case "rating":
-        query = query.order("avg_rating", { ascending: false });
-        break;
-      case "reviews":
-        query = query.order("review_count", { ascending: false });
-        break;
-      case "name":
-        query = query.order("name_en", { ascending: true });
-        break;
-      default:
-        query = query.order("avg_rating", { ascending: false });
-    }
-
-    const { data, error: err } = await query.limit(100);
-
-    if (err) {
-      setError(err.message);
-    } else {
-      setRestaurants((data as Restaurant[]) ?? []);
+    try {
+      const res = await fetch(`/api/restaurants?${params.toString()}`);
+      const json = await res.json();
+      if (json.error) {
+        setError(json.error);
+      } else {
+        setRestaurants((json.data as Restaurant[]) ?? []);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch restaurants");
     }
     setLoading(false);
   }, [filters?.vegetarianTypes, filters?.district, filters?.priceRange, filters?.minRating, filters?.search, filters?.sortBy]);
@@ -75,24 +46,29 @@ export function useRestaurants(filters?: RestaurantFilters) {
 export function useNearbyRestaurants(params: NearbyParams | null) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     if (!params) return;
 
-    const fetch = async () => {
+    const fetchNearby = async () => {
       setLoading(true);
-      const { data } = await supabase.rpc("nearby_restaurants", {
-        lat: params.lat,
-        lng: params.lng,
-        radius_meters: params.radius ?? 2000,
-        result_limit: params.limit ?? 50,
-      });
-      setRestaurants((data as Restaurant[]) ?? []);
+      try {
+        const qs = new URLSearchParams({
+          lat: String(params.lat),
+          lng: String(params.lng),
+          radius: String(params.radius ?? 2000),
+          limit: String(params.limit ?? 50),
+        });
+        const res = await fetch(`/api/restaurants/nearby?${qs.toString()}`);
+        const json = await res.json();
+        setRestaurants((json.data as Restaurant[]) ?? []);
+      } catch {
+        setRestaurants([]);
+      }
       setLoading(false);
     };
 
-    fetch();
+    fetchNearby();
   }, [params?.lat, params?.lng, params?.radius, params?.limit]);
 
   return { restaurants, loading };

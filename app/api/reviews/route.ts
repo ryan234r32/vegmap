@@ -44,18 +44,48 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
 
+  // Validate required fields
+  if (!body.restaurant_id || typeof body.restaurant_id !== "string") {
+    return NextResponse.json(
+      { data: null, error: "restaurant_id is required" },
+      { status: 400 }
+    );
+  }
+
+  const overallRating = Number(body.overall_rating);
+  if (!Number.isInteger(overallRating) || overallRating < 1 || overallRating > 5) {
+    return NextResponse.json(
+      { data: null, error: "overall_rating must be an integer between 1 and 5" },
+      { status: 400 }
+    );
+  }
+
+  // Clamp optional ratings to 1-5
+  const clampRating = (v: unknown): number | null => {
+    if (v == null) return null;
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > 5) return null;
+    return n;
+  };
+
+  // Sanitize text fields
+  const sanitizeText = (v: unknown, maxLen: number): string | null => {
+    if (v == null || typeof v !== "string") return null;
+    return v.trim().slice(0, maxLen) || null;
+  };
+
   const { data, error } = await supabase
     .from("reviews")
     .insert({
       restaurant_id: body.restaurant_id,
       user_id: user.id,
-      overall_rating: body.overall_rating,
-      food_rating: body.food_rating || null,
-      service_rating: body.service_rating || null,
-      value_rating: body.value_rating || null,
-      english_friendly_rating: body.english_friendly_rating || null,
-      title: body.title || null,
-      body: body.body || null,
+      overall_rating: overallRating,
+      food_rating: clampRating(body.food_rating),
+      service_rating: clampRating(body.service_rating),
+      value_rating: clampRating(body.value_rating),
+      english_friendly_rating: clampRating(body.english_friendly_rating),
+      title: sanitizeText(body.title, 200),
+      body: sanitizeText(body.body, 5000),
       visit_date: body.visit_date || null,
     })
     .select()

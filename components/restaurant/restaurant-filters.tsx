@@ -86,7 +86,7 @@ export function RestaurantFiltersBar({
       </div>
 
       {/* Dropdowns */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
         <Select
           value={filters.district ?? "all"}
           onValueChange={(v) =>

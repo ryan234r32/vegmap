@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { transformRestaurantLocations } from "@/lib/geo";
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -36,7 +37,8 @@ export async function GET() {
     return NextResponse.json({ data: null, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data, error: null });
+  const transformed = transformRestaurantLocations(data ?? []);
+  return NextResponse.json({ data: transformed, error: null });
 }
 
 // PATCH — approve or reject a restaurant submission

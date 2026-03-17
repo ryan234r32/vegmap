@@ -98,12 +98,12 @@ export function RestaurantDetail({
       <Header />
       <main className="flex-1">
         {/* Cover Image */}
-        <div className="relative h-64 md:h-80 bg-muted">
+        <div className="relative h-48 sm:h-64 md:h-80 bg-muted">
           {restaurant.cover_image_url ? (
             <img
               src={restaurant.cover_image_url}
-              alt={restaurant.name_en}
-              className="w-full h-full object-cover"
+              alt={restaurant.name_en || "Restaurant"}
+              className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 flex items-center justify-center">

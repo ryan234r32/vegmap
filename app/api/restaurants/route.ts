@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { transformRestaurantLocations } from "@/lib/geo";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -30,10 +31,12 @@ export async function GET(request: NextRequest) {
     query = query.gte("avg_rating", parseFloat(minRating));
   }
 
-  const search = searchParams.get("search");
+  const search = searchParams.get("search")?.slice(0, 100);
   if (search) {
+    // Escape special Supabase filter characters to prevent injection
+    const safe = search.replace(/[%_\\]/g, "\\$&");
     query = query.or(
-      `name_en.ilike.%${search}%,name_zh.ilike.%${search}%,description_en.ilike.%${search}%`
+      `name_en.ilike.%${safe}%,name_zh.ilike.%${safe}%,description_en.ilike.%${safe}%`
     );
   }
 
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
       query = query.order("avg_rating", { ascending: false });
   }
 
-  const limit = parseInt(searchParams.get("limit") ?? "100", 10);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "1000", 10), 1000);
   query = query.limit(limit);
 
   const { data, error } = await query;
@@ -61,7 +64,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: null, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data, error: null });
+  const transformed = transformRestaurantLocations(data ?? []);
+
+  return NextResponse.json(
+    { data: transformed, error: null },
+    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+  );
 }
 
 export async function POST(request: NextRequest) {

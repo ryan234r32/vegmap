@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { VegTypeBadge } from "./veg-type-badge";
 import { TrustBadge } from "./trust-badge";
@@ -14,12 +15,15 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
     <Link href={`/restaurants/${restaurant.slug}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
         {/* Cover Image */}
-        <div className="relative h-48 bg-muted">
+        <div className="relative aspect-[4/3] bg-muted">
           {restaurant.cover_image_url ? (
-            <img
+            <Image
               src={restaurant.cover_image_url}
-              alt={restaurant.name_en}
-              className="w-full h-full object-cover"
+              alt={restaurant.name_en || "Restaurant"}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl">
