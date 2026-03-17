@@ -125,7 +125,7 @@ export const MRT_STATIONS: {
   // Blue Line (Bannan)
   { name_en: "Ximen", name_zh: "西門", line: "blue", lat: 25.0420, lng: 121.5081 },
   { name_en: "Longshan Temple", name_zh: "龍山寺", line: "blue", lat: 25.0367, lng: 121.5000 },
-  { name_en: "善導寺", name_zh: "善導寺", line: "blue", lat: 25.0445, lng: 121.5256 },
+  { name_en: "Shandao Temple", name_zh: "善導寺", line: "blue", lat: 25.0445, lng: 121.5256 },
   { name_en: "Zhongxiao Xinsheng", name_zh: "忠孝新生", line: "blue", lat: 25.0425, lng: 121.5330 },
   { name_en: "Zhongxiao Dunhua", name_zh: "忠孝敦化", line: "blue", lat: 25.0416, lng: 121.5510 },
   { name_en: "Zhongxiao Fuxing", name_zh: "忠孝復興", line: "blue", lat: 25.0416, lng: 121.5436 },

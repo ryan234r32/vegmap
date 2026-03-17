@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Select,
   SelectContent,
@@ -27,11 +27,20 @@ interface RestaurantFiltersProps {
   onFiltersChange: (filters: RestaurantFilters) => void;
 }
 
+// Popular stations foreigners commonly use (shown by default)
+const POPULAR_STATIONS = new Set([
+  "Taipei Main Station", "Zhongxiao Fuxing", "Taipei 101", "Ximen",
+  "Daan", "Dongmen", "Zhongshan", "Xinyi Anhe", "Gongguan",
+  "Nanjing Fuxing", "Shilin", "Jiantan", "Longshan Temple",
+  "Technology Building", "Songjiang Nanjing",
+]);
+
 export function RestaurantFiltersBar({
   filters,
   onFiltersChange,
 }: RestaurantFiltersProps) {
   const [searchInput, setSearchInput] = useState(filters.search ?? "");
+  const [showAllStations, setShowAllStations] = useState(false);
 
   const toggleVegType = (type: VegetarianType) => {
     const current = filters.vegetarianTypes ?? [];
@@ -76,16 +85,19 @@ export function RestaurantFiltersBar({
   };
 
   // Deduplicate MRT stations (some appear on multiple lines)
-  const uniqueStations = MRT_STATIONS.filter(
-    (s, i, arr) => arr.findIndex((x) => x.name_en === s.name_en) === i
-  );
+  const uniqueStations = useMemo(() =>
+    MRT_STATIONS.filter(
+      (s, i, arr) => arr.findIndex((x) => x.name_en === s.name_en) === i
+    ), []);
 
-  // Group stations by line for display
-  const stationsByLine = uniqueStations.reduce<Record<string, typeof uniqueStations>>((acc, station) => {
-    if (!acc[station.line]) acc[station.line] = [];
-    acc[station.line].push(station);
-    return acc;
-  }, {});
+  // Split into popular (shown by default) and all
+  const displayStations = useMemo(() => {
+    if (showAllStations) return uniqueStations;
+    // Show popular stations + any currently selected ones
+    return uniqueStations.filter(
+      s => POPULAR_STATIONS.has(s.name_en) || filters.mrtStations?.includes(s.name_en)
+    );
+  }, [showAllStations, uniqueStations, filters.mrtStations]);
 
   const hasActiveFilters =
     (filters.vegetarianTypes?.length ?? 0) > 0 ||
@@ -129,24 +141,40 @@ export function RestaurantFiltersBar({
       <div className="space-y-2">
         <p className="text-xs font-medium text-muted-foreground">By MRT Station</p>
         <div className="flex flex-wrap gap-1.5">
-          {(["red", "blue", "green", "brown", "orange", "yellow"] as MrtLine[]).map((line) =>
-            stationsByLine[line]?.map((station) => {
-              const isActive = filters.mrtStations?.includes(station.name_en);
-              return (
-                <Badge
-                  key={`${station.name_en}-${line}`}
-                  variant={isActive ? "default" : "outline"}
-                  className="cursor-pointer select-none text-xs gap-1"
-                  onClick={() => toggleMrtStation(station.name_en)}
-                >
-                  <span
-                    className="inline-block w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: MRT_LINE_COLORS[line] }}
-                  />
-                  {station.name_en}
-                </Badge>
-              );
-            })
+          {displayStations.map((station) => {
+            const isActive = filters.mrtStations?.includes(station.name_en);
+            return (
+              <Badge
+                key={station.name_en}
+                variant={isActive ? "default" : "outline"}
+                className="cursor-pointer select-none text-xs gap-1"
+                onClick={() => toggleMrtStation(station.name_en)}
+              >
+                <span
+                  className="inline-block w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: MRT_LINE_COLORS[station.line as MrtLine] }}
+                />
+                {station.name_en}
+              </Badge>
+            );
+          })}
+          {!showAllStations && (
+            <Badge
+              variant="outline"
+              className="cursor-pointer select-none text-xs opacity-70"
+              onClick={() => setShowAllStations(true)}
+            >
+              +{uniqueStations.length - displayStations.length} more
+            </Badge>
+          )}
+          {showAllStations && (
+            <Badge
+              variant="outline"
+              className="cursor-pointer select-none text-xs opacity-70"
+              onClick={() => setShowAllStations(false)}
+            >
+              Show less
+            </Badge>
           )}
         </div>
       </div>
