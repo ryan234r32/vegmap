@@ -32,7 +32,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { DAYS_OF_WEEK, PRICE_RANGES } from "@/constants";
+import { DAYS_OF_WEEK, PRICE_RANGES, MRT_STATIONS, MRT_LINE_COLORS } from "@/constants";
+import type { MrtLine } from "@/constants";
 import type { Restaurant, Review, Menu, MenuItem } from "@/lib/types";
 
 interface Props {
@@ -267,6 +268,22 @@ export function RestaurantDetail({
                 </div>
               </div>
             )}
+            {restaurant.nearest_mrt && (() => {
+              const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
+              const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">🚇</span>
+                  <span className="flex items-center gap-1">
+                    {lineColor && (
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }} />
+                    )}
+                    Near {restaurant.nearest_mrt}
+                    {station?.name_zh && <span className="text-muted-foreground">({station.name_zh})</span>}
+                  </span>
+                </div>
+              );
+            })()}
             {todayHours && (
               <button
                 className="flex items-center gap-2 w-full text-left cursor-pointer"
@@ -445,6 +462,23 @@ export function RestaurantDetail({
                     </div>
                   </div>
                 )}
+
+                {restaurant.nearest_mrt && (() => {
+                  const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
+                  const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+                  return (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-base">🚇</span>
+                      <span className="flex items-center gap-1">
+                        {lineColor && (
+                          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }} />
+                        )}
+                        {restaurant.nearest_mrt}
+                        {station?.name_zh && <span className="text-muted-foreground">({station.name_zh})</span>}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {restaurant.phone && (
                   <div className="flex items-center gap-2 text-sm">

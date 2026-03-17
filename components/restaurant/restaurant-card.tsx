@@ -5,10 +5,12 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { VegTypeBadge } from "./veg-type-badge";
 import { TrustBadge } from "./trust-badge";
-import { Star, MapPin, Heart } from "lucide-react";
+import { Star, MapPin, Heart, Train } from "lucide-react";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useFavorites } from "@/lib/hooks/use-favorites";
+import { MRT_STATIONS, MRT_LINE_COLORS } from "@/constants";
 import type { Restaurant } from "@/lib/types";
+import type { MrtLine } from "@/constants";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -95,13 +97,28 @@ export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCar
             )}
           </div>
 
-          {/* District */}
-          {restaurant.district && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-              <MapPin className="h-3 w-3" />
-              <span>{restaurant.district}</span>
-            </div>
-          )}
+          {/* Location: District + Nearest MRT */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 flex-wrap">
+            {restaurant.district && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {restaurant.district}
+              </span>
+            )}
+            {restaurant.nearest_mrt && (() => {
+              const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
+              const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+              return (
+                <span className="flex items-center gap-1">
+                  <Train className="h-3 w-3" />
+                  {lineColor && (
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: lineColor }} />
+                  )}
+                  {restaurant.nearest_mrt}
+                </span>
+              );
+            })()}
+          </div>
 
           {/* Veg Types + Trust Badge */}
           <div className="flex flex-wrap gap-1 items-center">

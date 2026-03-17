@@ -14,7 +14,8 @@ import { useGeolocation } from "@/lib/hooks/use-geolocation";
 import { Locate, List, MapIcon, Moon, Utensils, CreditCard, Star, MapPin, ChevronRight, Navigation, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { TAIPEI_DISTRICTS, VEGETARIAN_TYPES } from "@/constants";
+import { TAIPEI_DISTRICTS, VEGETARIAN_TYPES, MRT_STATIONS, MRT_LINE_COLORS } from "@/constants";
+import type { MrtLine } from "@/constants";
 import { WelcomeSheet } from "@/components/onboarding/welcome-sheet";
 import { VegTypeBadge } from "@/components/restaurant/veg-type-badge";
 import type { RestaurantFilters, Restaurant, VegetarianType } from "@/lib/types";
@@ -555,6 +556,22 @@ function DetailScrollContent({
           </div>
         )}
 
+        {restaurant.nearest_mrt && (() => {
+          const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
+          const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+          return (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="text-base flex-shrink-0">🚇</span>
+              <span className="flex items-center gap-1">
+                {lineColor && (
+                  <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: lineColor }} />
+                )}
+                Near {restaurant.nearest_mrt}
+              </span>
+            </div>
+          );
+        })()}
+
         {restaurant.vegetarian_types.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {restaurant.vegetarian_types.map((type) => (
@@ -699,7 +716,18 @@ function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
               <span className="text-xs text-muted-foreground">({restaurant.review_count})</span>
             </div>
           )}
-          {restaurant.district && (
+          {restaurant.nearest_mrt ? (() => {
+            const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
+            const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+            return (
+              <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                {lineColor && (
+                  <span className="inline-block w-2 h-2 rounded-full mr-0.5" style={{ backgroundColor: lineColor }} />
+                )}
+                {restaurant.nearest_mrt}
+              </div>
+            );
+          })() : restaurant.district && (
             <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" />
               {restaurant.district}

@@ -45,6 +45,7 @@ export interface Restaurant {
   avg_rating: number;
   review_count: number;
   is_verified: boolean;
+  nearest_mrt: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -156,6 +157,7 @@ export interface NearbyParams {
 export interface RestaurantFilters {
   vegetarianTypes?: VegetarianType[];
   districts?: string[];
+  mrtStations?: string[];
   priceRanges?: PriceRange[];
   minRating?: number;
   search?: string;

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("restaurants")
-    .select("id,name_en,name_zh,slug,district,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified")
+    .select("id,name_en,name_zh,slug,district,nearest_mrt,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified")
     .eq("is_active", true);
 
   const vegTypes = searchParams.get("vegTypes");
@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
     const districtList = districts.split(",").filter(Boolean);
     if (districtList.length > 0) {
       query = query.in("district", districtList);
+    }
+  }
+
+  const mrtStations = searchParams.get("mrtStations");
+  if (mrtStations) {
+    const stationList = mrtStations.split(",").filter(Boolean);
+    if (stationList.length > 0) {
+      query = query.in("nearest_mrt", stationList);
     }
   }
 

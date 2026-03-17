@@ -9,6 +9,7 @@ function serializeFilters(f?: RestaurantFilters): string {
   return JSON.stringify({
     v: f.vegetarianTypes?.sort() ?? [],
     d: f.districts?.sort() ?? [],
+    mrt: f.mrtStations?.sort() ?? [],
     p: f.priceRanges?.sort() ?? [],
     m: f.minRating ?? 0,
     s: f.search ?? "",
@@ -40,6 +41,9 @@ export function useRestaurants(filters?: RestaurantFilters) {
       }
       if (filters?.districts && filters.districts.length > 0) {
         params.set("districts", filters.districts.join(","));
+      }
+      if (filters?.mrtStations && filters.mrtStations.length > 0) {
+        params.set("mrtStations", filters.mrtStations.join(","));
       }
       if (filters?.priceRanges && filters.priceRanges.length > 0) {
         params.set("priceRanges", filters.priceRanges.join(","));
