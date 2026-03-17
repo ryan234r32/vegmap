@@ -28,6 +28,9 @@ export const metadata: Metadata = {
     "plant-based restaurants Taiwan",
     "vegmap",
   ],
+  alternates: {
+    canonical: "https://vegmap-nu.vercel.app",
+  },
   openGraph: {
     title: "VegMap - Vegetarian Restaurants in Taipei",
     description:

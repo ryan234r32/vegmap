@@ -22,10 +22,13 @@ export async function GET(request: NextRequest) {
     .limit(50);
 
   if (error) {
-    return NextResponse.json({ data: null, error: error.message }, { status: 500 });
+    return NextResponse.json({ data: null, error: "Failed to fetch reviews" }, { status: 500 });
   }
 
-  return NextResponse.json({ data, error: null });
+  return NextResponse.json(
+    { data, error: null },
+    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" } }
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -74,6 +77,22 @@ export async function POST(request: NextRequest) {
     return v.trim().slice(0, maxLen) || null;
   };
 
+  // Prevent duplicate reviews from same user
+  const { data: existing } = await supabase
+    .from("reviews")
+    .select("id")
+    .eq("restaurant_id", body.restaurant_id)
+    .eq("user_id", user.id)
+    .limit(1)
+    .single();
+
+  if (existing) {
+    return NextResponse.json(
+      { data: null, error: "You have already reviewed this restaurant" },
+      { status: 409 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("reviews")
     .insert({
@@ -92,7 +111,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ data: null, error: error.message }, { status: 400 });
+    return NextResponse.json({ data: null, error: "Failed to create review" }, { status: 400 });
   }
 
   return NextResponse.json({ data, error: null }, { status: 201 });

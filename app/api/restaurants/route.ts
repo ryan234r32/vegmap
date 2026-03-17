@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
     case "reviews":
       query = query.order("review_count", { ascending: false });
       break;
+    case "english_friendly":
+      query = query.order("english_friendly_avg", { ascending: false, nullsFirst: false });
+      break;
     case "name":
       query = query.order("name_en", { ascending: true });
       break;
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
 
   if (error) {
-    return NextResponse.json({ data: null, error: error.message }, { status: 500 });
+    return NextResponse.json({ data: null, error: "Failed to fetch restaurants" }, { status: 500 });
   }
 
   const transformed = transformRestaurantLocations(data ?? []);
@@ -89,32 +92,47 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { name_en, name_zh, address_en, address_zh, district, price_range, vegetarian_types, website, description_en } = body;
 
-  if (!name_en || !vegetarian_types?.length) {
+  if (!name_en || typeof name_en !== "string" || name_en.trim().length === 0) {
     return NextResponse.json(
-      { data: null, error: "name_en and vegetarian_types are required" },
+      { data: null, error: "name_en is required" },
       { status: 400 }
     );
   }
 
-  const slug = name_en
+  if (!Array.isArray(vegetarian_types) || vegetarian_types.length === 0) {
+    return NextResponse.json(
+      { data: null, error: "vegetarian_types is required" },
+      { status: 400 }
+    );
+  }
+
+  const trimStr = (v: unknown, max: number): string | null => {
+    if (v == null || typeof v !== "string") return null;
+    return v.trim().slice(0, max) || null;
+  };
+
+  const safeName = name_en.trim().slice(0, 200);
+  const slug = safeName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     + "-" + Date.now().toString(36);
 
+  const validPrices = ["$", "$$", "$$$", "$$$$"];
+
   const { data, error } = await supabase
     .from("restaurants")
     .insert({
-      name_en,
-      name_zh: name_zh || null,
+      name_en: safeName,
+      name_zh: trimStr(name_zh, 200),
       slug,
-      address_en: address_en || null,
-      address_zh: address_zh || null,
-      district: district || null,
-      price_range: price_range || null,
-      vegetarian_types,
-      website: website || null,
-      description_en: description_en || null,
+      address_en: trimStr(address_en, 500),
+      address_zh: trimStr(address_zh, 500),
+      district: trimStr(district, 50),
+      price_range: validPrices.includes(price_range) ? price_range : null,
+      vegetarian_types: vegetarian_types.slice(0, 6),
+      website: trimStr(website, 500),
+      description_en: trimStr(description_en, 2000),
       is_verified: false,
       is_active: false,
     })
@@ -122,7 +140,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ data: null, error: error.message }, { status: 500 });
+    return NextResponse.json({ data: null, error: "Failed to create restaurant" }, { status: 500 });
   }
 
   return NextResponse.json({ data, error: null }, { status: 201 });

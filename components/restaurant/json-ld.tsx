@@ -34,7 +34,13 @@ export function RestaurantJsonLd({ restaurant }: Props) {
   if (restaurant.phone) jsonLd.telephone = restaurant.phone;
   if (restaurant.website) jsonLd.url = restaurant.website;
 
-  const cuisines = ["Vegetarian", ...(restaurant.cuisine_tags ?? [])];
+  const vegCuisines: string[] = [];
+  const types = restaurant.vegetarian_types ?? [];
+  if (types.includes("vegan")) vegCuisines.push("Vegan");
+  if (types.some((t) => ["ovo_lacto", "lacto", "ovo", "five_spice"].includes(t))) vegCuisines.push("Vegetarian");
+  if (types.includes("vegetarian_friendly") && vegCuisines.length === 0) vegCuisines.push("Vegetarian-Friendly");
+  if (vegCuisines.length === 0) vegCuisines.push("Vegetarian");
+  const cuisines = [...vegCuisines, ...(restaurant.cuisine_tags ?? [])];
   jsonLd.servesCuisine = cuisines;
 
   if (restaurant.price_range) jsonLd.priceRange = restaurant.price_range;

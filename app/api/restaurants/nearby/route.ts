@@ -4,14 +4,14 @@ import { transformRestaurantLocations } from "@/lib/geo";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const lat = parseFloat(searchParams.get("lat") ?? "0");
-  const lng = parseFloat(searchParams.get("lng") ?? "0");
+  const lat = parseFloat(searchParams.get("lat") ?? "");
+  const lng = parseFloat(searchParams.get("lng") ?? "");
   const radius = Math.min(parseInt(searchParams.get("radius") ?? "2000", 10), 10000);
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 100);
 
-  if (!lat || !lng) {
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
     return NextResponse.json(
-      { data: null, error: "lat and lng are required" },
+      { data: null, error: "Valid lat (-90 to 90) and lng (-180 to 180) are required" },
       { status: 400 }
     );
   }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ data: null, error: error.message }, { status: 500 });
+    return NextResponse.json({ data: null, error: "Failed to fetch nearby restaurants" }, { status: 500 });
   }
 
   const transformed = transformRestaurantLocations(data ?? []);
