@@ -221,15 +221,22 @@ export default function HomePage() {
         <section className="hidden md:block container mx-auto px-4 py-8 border-t">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <h3 className="font-semibold mb-3">Browse by District</h3>
+              <h3 className="font-semibold mb-3">Browse by MRT Station</h3>
               <div className="flex flex-wrap gap-1.5">
-                {TAIPEI_DISTRICTS.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => { setFilters({ districts: [d] }); setView("list"); setVisibleCount(PAGE_SIZE); }}
-                    className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer"
-                  >{d}</button>
-                ))}
+                {["Taipei Main Station", "Zhongxiao Fuxing", "Ximen", "Dongmen", "Daan", "Taipei 101", "Zhongshan", "Gongguan", "Shilin", "Jiantan", "Xinyi Anhe", "Nanjing Fuxing"].map((station) => {
+                  const s = MRT_STATIONS.find(m => m.name_en === station);
+                  const color = s ? MRT_LINE_COLORS[s.line as MrtLine] : undefined;
+                  return (
+                    <button
+                      key={station}
+                      onClick={() => { setFilters({ mrtStations: [station] }); setView("list"); setVisibleCount(PAGE_SIZE); }}
+                      className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      {color && <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: color }} />}
+                      {station}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div>
