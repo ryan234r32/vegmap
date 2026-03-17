@@ -1,16 +1,35 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { VegTypeBadge } from "./veg-type-badge";
 import { TrustBadge } from "./trust-badge";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Heart } from "lucide-react";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { useFavorites } from "@/lib/hooks/use-favorites";
 import type { Restaurant } from "@/lib/types";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
+  onFavoriteNeedAuth?: () => void;
 }
 
-export function RestaurantCard({ restaurant }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCardProps) {
+  const { user } = useAuth();
+  const { isFavorited, toggle } = useFavorites();
+  const favorited = isFavorited(restaurant.id);
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent Link navigation
+    e.stopPropagation();
+    if (!user) {
+      onFavoriteNeedAuth?.();
+      return;
+    }
+    toggle(restaurant.id);
+  };
+
   return (
     <Link href={`/restaurants/${restaurant.slug}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
@@ -32,10 +51,22 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
           )}
           {/* Price Range */}
           {restaurant.price_range && (
-            <span className="absolute top-2 right-2 bg-background/90 text-foreground text-xs font-medium px-2 py-1 rounded">
+            <span className="absolute top-2 left-2 bg-background/90 text-foreground text-xs font-medium px-2 py-1 rounded">
               {restaurant.price_range}
             </span>
           )}
+          {/* Favorite Button */}
+          <button
+            onClick={handleFavorite}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 hover:bg-background transition-colors"
+            aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors ${
+                favorited ? "fill-red-500 text-red-500" : "text-muted-foreground"
+              }`}
+            />
+          </button>
         </div>
 
         <CardContent className="p-4">
@@ -60,11 +91,6 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
                 <span className="text-sm text-muted-foreground">
                   ({restaurant.review_count})
                 </span>
-              </div>
-            )}
-            {restaurant.google_rating && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <span>Google: {restaurant.google_rating}</span>
               </div>
             )}
           </div>

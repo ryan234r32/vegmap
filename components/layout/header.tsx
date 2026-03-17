@@ -105,9 +105,9 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button onClick={signInWithGoogle} size="sm">
-                  Sign in
-                </Button>
+                <Link href="/auth/login">
+                  <Button size="sm">Sign in</Button>
+                </Link>
               )}
             </>
           )}
