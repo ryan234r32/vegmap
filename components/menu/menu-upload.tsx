@@ -109,7 +109,7 @@ export function MenuUpload({ restaurantId, onSuccess }: MenuUploadProps) {
       if (result.error) {
         setError(result.error);
       } else {
-        const items = result.data?.items ?? result.data?.items;
+        const items = result.data?.items ?? [];
         setTranslatedItems(items);
         onSuccess?.();
       }

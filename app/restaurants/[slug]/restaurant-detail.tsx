@@ -185,13 +185,19 @@ export function RestaurantDetail({
 
           {/* Rating + Price + Veg badges — single row */}
           <div className="flex items-center gap-2 flex-wrap mb-3">
-            {restaurant.avg_rating > 0 && (
+            {restaurant.avg_rating > 0 ? (
               <div className="flex items-center gap-1">
                 <StarRating rating={restaurant.avg_rating} size="sm" />
                 <span className="text-sm font-semibold">{restaurant.avg_rating}</span>
                 <span className="text-xs text-muted-foreground">({restaurant.review_count})</span>
               </div>
-            )}
+            ) : restaurant.google_rating ? (
+              <div className="flex items-center gap-1">
+                <StarRating rating={restaurant.google_rating} size="sm" />
+                <span className="text-sm font-semibold">{restaurant.google_rating}</span>
+                <span className="text-xs text-muted-foreground">Google</span>
+              </div>
+            ) : null}
             {restaurant.price_range && (
               <Badge variant="secondary" className="text-xs">
                 {restaurant.price_range}
