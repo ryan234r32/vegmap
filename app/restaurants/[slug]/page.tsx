@@ -71,6 +71,21 @@ export default async function RestaurantPage({ params }: Props) {
     .eq("restaurant_id", restaurant.id)
     .order("created_at", { ascending: false });
 
+  // Aggregate photos from reviews for the Photos tab
+  const photos: { id: string; url: string }[] = [];
+  if (reviews) {
+    for (const review of reviews) {
+      const reviewPhotos = (review as Record<string, unknown>).photos as
+        | { id: string; storage_path: string }[]
+        | undefined;
+      if (reviewPhotos) {
+        for (const p of reviewPhotos) {
+          photos.push({ id: p.id, url: p.storage_path });
+        }
+      }
+    }
+  }
+
   return (
     <>
       <RestaurantJsonLd restaurant={restaurant} />
@@ -78,6 +93,7 @@ export default async function RestaurantPage({ params }: Props) {
         restaurant={restaurant}
         reviews={reviews ?? []}
         menus={menus ?? []}
+        photos={photos}
       />
     </>
   );
