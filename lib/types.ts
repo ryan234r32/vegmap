@@ -155,8 +155,8 @@ export interface NearbyParams {
 
 export interface RestaurantFilters {
   vegetarianTypes?: VegetarianType[];
-  district?: string;
-  priceRange?: PriceRange;
+  districts?: string[];
+  priceRanges?: PriceRange[];
   minRating?: number;
   search?: string;
   sortBy?: "rating" | "reviews" | "distance" | "name" | "english_friendly";

@@ -34,54 +34,45 @@ function ClusteredMarkers({
   const map = useMap();
   const clusterer = useRef<MarkerClusterer | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const onClickRef = useRef(onMarkerClick);
+  const prevIdsRef = useRef("");
+
+  // Keep callback ref current without triggering marker rebuild
+  useEffect(() => {
+    onClickRef.current = onMarkerClick;
+  }, [onMarkerClick]);
 
   useEffect(() => {
     if (!map) return;
 
+    // Skip rebuild if restaurant IDs haven't changed
+    const ids = restaurants.map((r) => r.id).join(",");
+    if (ids === prevIdsRef.current && markersRef.current.length > 0) return;
+    prevIdsRef.current = ids;
+
     let cancelled = false;
 
-    // Load the marker library, then create all markers imperatively
     google.maps.importLibrary("marker").then((lib) => {
       if (cancelled) return;
 
       const markerLib = lib as google.maps.MarkerLibrary;
 
-      // Clean up previous markers
-      if (clusterer.current) {
-        clusterer.current.clearMarkers();
-      }
-      for (const m of markersRef.current) {
-        m.map = null;
-      }
+      // Clean up previous
+      clusterer.current?.clearMarkers();
+      for (const m of markersRef.current) m.map = null;
       markersRef.current = [];
 
-      // Create clusterer if needed
       if (!clusterer.current) {
         clusterer.current = new MarkerClusterer({ map });
       }
 
-      // Create markers
       const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
 
       for (const restaurant of restaurants) {
         if (!restaurant.location) continue;
 
         const el = document.createElement("div");
-        el.style.cssText = `
-          background: #16a34a;
-          color: white;
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          font-weight: bold;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          cursor: pointer;
-        `;
+        el.style.cssText = "background:#16a34a;color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer";
         el.textContent = "🌱";
 
         const marker = new markerLib.AdvancedMarkerElement({
@@ -90,7 +81,8 @@ function ClusteredMarkers({
           title: restaurant.name_en,
         });
 
-        marker.addEventListener("gmp-click", () => onMarkerClick(restaurant));
+        const r = restaurant;
+        marker.addEventListener("gmp-click", () => onClickRef.current(r));
         newMarkers.push(marker);
       }
 
@@ -98,15 +90,17 @@ function ClusteredMarkers({
       clusterer.current.addMarkers(newMarkers);
     });
 
+    return () => { cancelled = true; };
+  }, [map, restaurants]);
+
+  // Full cleanup on unmount only
+  useEffect(() => {
     return () => {
-      cancelled = true;
       clusterer.current?.clearMarkers();
-      for (const m of markersRef.current) {
-        m.map = null;
-      }
+      for (const m of markersRef.current) m.map = null;
       markersRef.current = [];
     };
-  }, [map, restaurants, onMarkerClick]);
+  }, []);
 
   return null;
 }

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("restaurants")
-    .select("*")
+    .select("id,name_en,name_zh,slug,district,vegetarian_types,cuisine_tags,price_range,avg_rating,review_count,cover_image_url,location,address_en,is_verified")
     .eq("is_active", true);
 
   const vegTypes = searchParams.get("vegTypes");
@@ -16,14 +16,20 @@ export async function GET(request: NextRequest) {
     query = query.overlaps("vegetarian_types", vegTypes.split(","));
   }
 
-  const district = searchParams.get("district");
-  if (district) {
-    query = query.eq("district", district);
+  const districts = searchParams.get("districts");
+  if (districts) {
+    const districtList = districts.split(",").filter(Boolean);
+    if (districtList.length > 0) {
+      query = query.in("district", districtList);
+    }
   }
 
-  const priceRange = searchParams.get("priceRange");
-  if (priceRange) {
-    query = query.eq("price_range", priceRange);
+  const priceRanges = searchParams.get("priceRanges");
+  if (priceRanges) {
+    const priceList = priceRanges.split(",").filter(Boolean);
+    if (priceList.length > 0) {
+      query = query.in("price_range", priceList);
+    }
   }
 
   const minRating = searchParams.get("minRating");

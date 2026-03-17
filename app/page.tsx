@@ -14,9 +14,12 @@ import Link from "next/link";
 import { TAIPEI_DISTRICTS } from "@/constants";
 import type { RestaurantFilters } from "@/lib/types";
 
+const PAGE_SIZE = 24;
+
 export default function HomePage() {
   const [filters, setFilters] = useState<RestaurantFilters>({});
   const [view, setView] = useState<"map" | "list">("map");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { restaurants, loading } = useRestaurants(filters);
   const {
     lat,
@@ -128,14 +131,26 @@ export default function HomePage() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {displayRestaurants.map((restaurant) => (
-                    <RestaurantCard
-                      key={restaurant.id}
-                      restaurant={restaurant}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayRestaurants.slice(0, visibleCount).map((restaurant) => (
+                      <RestaurantCard
+                        key={restaurant.id}
+                        restaurant={restaurant}
+                      />
+                    ))}
+                  </div>
+                  {visibleCount < displayRestaurants.length && (
+                    <div className="text-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                      >
+                        Load More ({displayRestaurants.length - visibleCount} remaining)
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -179,8 +194,9 @@ export default function HomePage() {
                   <button
                     key={d}
                     onClick={() => {
-                      setFilters({ district: d });
+                      setFilters({ districts: [d] });
                       setView("list");
+                      setVisibleCount(PAGE_SIZE);
                     }}
                     className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer"
                   >
@@ -228,6 +244,7 @@ export default function HomePage() {
                     onClick={() => {
                       setFilters({ search: tag });
                       setView("list");
+                      setVisibleCount(PAGE_SIZE);
                     }}
                     className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent transition-colors cursor-pointer"
                   >

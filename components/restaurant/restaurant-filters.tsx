@@ -17,7 +17,7 @@ import {
   TAIPEI_DISTRICTS,
   PRICE_RANGES,
 } from "@/constants";
-import type { RestaurantFilters, VegetarianType } from "@/lib/types";
+import type { RestaurantFilters, VegetarianType, PriceRange } from "@/lib/types";
 
 interface RestaurantFiltersProps {
   filters: RestaurantFilters;
@@ -38,6 +38,22 @@ export function RestaurantFiltersBar({
     onFiltersChange({ ...filters, vegetarianTypes: updated });
   };
 
+  const toggleDistrict = (district: string) => {
+    const current = filters.districts ?? [];
+    const updated = current.includes(district)
+      ? current.filter((d) => d !== district)
+      : [...current, district];
+    onFiltersChange({ ...filters, districts: updated });
+  };
+
+  const togglePrice = (price: PriceRange) => {
+    const current = filters.priceRanges ?? [];
+    const updated = current.includes(price)
+      ? current.filter((p) => p !== price)
+      : [...current, price];
+    onFiltersChange({ ...filters, priceRanges: updated });
+  };
+
   const handleSearch = (value: string) => {
     setSearchInput(value);
     onFiltersChange({ ...filters, search: value || undefined });
@@ -50,8 +66,8 @@ export function RestaurantFiltersBar({
 
   const hasActiveFilters =
     (filters.vegetarianTypes?.length ?? 0) > 0 ||
-    filters.district ||
-    filters.priceRange ||
+    (filters.districts?.length ?? 0) > 0 ||
+    (filters.priceRanges?.length ?? 0) > 0 ||
     filters.search;
 
   return (
@@ -85,78 +101,69 @@ export function RestaurantFiltersBar({
         })}
       </div>
 
-      {/* Dropdowns */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
-        <Select
-          value={filters.district ?? "all"}
-          onValueChange={(v) =>
-            onFiltersChange({
-              ...filters,
-              district: !v || v === "all" ? undefined : v,
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Districts" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Districts</SelectItem>
-            {TAIPEI_DISTRICTS.map((d) => (
-              <SelectItem key={d} value={d}>
-                {d}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* District Toggles */}
+      <div className="flex flex-wrap gap-1.5">
+        {TAIPEI_DISTRICTS.map((district) => {
+          const isActive = filters.districts?.includes(district);
+          return (
+            <Badge
+              key={district}
+              variant={isActive ? "default" : "outline"}
+              className="cursor-pointer select-none text-xs"
+              onClick={() => toggleDistrict(district)}
+            >
+              {district}
+            </Badge>
+          );
+        })}
+      </div>
 
-        <Select
-          value={filters.priceRange ?? "all"}
-          onValueChange={(v) =>
-            onFiltersChange({
-              ...filters,
-              priceRange: !v || v === "all" ? undefined : (v as "$" | "$$" | "$$$" | "$$$$"),
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Any Price" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Any Price</SelectItem>
-            {PRICE_RANGES.map((p) => (
-              <SelectItem key={p.value} value={p.value}>
-                {p.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Price + Sort row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Price Toggles */}
+        {PRICE_RANGES.map((p) => {
+          const isActive = filters.priceRanges?.includes(p.value);
+          return (
+            <Badge
+              key={p.value}
+              variant={isActive ? "default" : "outline"}
+              className="cursor-pointer select-none"
+              onClick={() => togglePrice(p.value)}
+            >
+              {p.value}
+            </Badge>
+          );
+        })}
 
-        <Select
-          value={filters.sortBy ?? "rating"}
-          onValueChange={(v) =>
-            onFiltersChange({
-              ...filters,
-              sortBy: (v ?? "rating") as RestaurantFilters["sortBy"],
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="rating">Highest Rated</SelectItem>
-            <SelectItem value="reviews">Most Reviews</SelectItem>
-            <SelectItem value="english_friendly">English Friendly</SelectItem>
-            <SelectItem value="name">Name (A-Z)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="ml-auto flex items-center gap-2">
+          {/* Sort dropdown (remains single select) */}
+          <Select
+            value={filters.sortBy ?? "rating"}
+            onValueChange={(v) =>
+              onFiltersChange({
+                ...filters,
+                sortBy: (v ?? "rating") as RestaurantFilters["sortBy"],
+              })
+            }
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="reviews">Most Reviews</SelectItem>
+              <SelectItem value="english_friendly">English Friendly</SelectItem>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <X className="h-4 w-4 mr-1" />
-            Clear
-          </Button>
-        )}
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
