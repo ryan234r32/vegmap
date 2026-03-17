@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true,
   },
+  headers: async () => [
+    {
+      source: "/(.*)",
+      headers: [
+        {
+          key: "Permissions-Policy",
+          value: "geolocation=(self)",
+        },
+      ],
+    },
+  ],
 };
 
 export default nextConfig;
