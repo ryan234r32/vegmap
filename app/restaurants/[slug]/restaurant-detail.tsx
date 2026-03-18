@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { VegTypeBadge } from "@/components/restaurant/veg-type-badge";
@@ -32,6 +33,7 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowLeft,
+  Star,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DAYS_OF_WEEK, PRICE_RANGES, MRT_STATIONS, MRT_LINE_COLORS } from "@/constants";
@@ -429,21 +431,39 @@ export function RestaurantDetail({
                   )}
 
                   {reviews.length === 0 ? (
-                    <div className="text-center py-10">
-                      <MessageSquare className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                      <h3 className="font-semibold mb-1">No reviews yet</h3>
-                      <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
-                        Be the first to share your experience! Was the food good? Is it English-friendly?
-                      </p>
-                      {user ? (
-                        <Button onClick={() => setShowReviewForm(true)} variant="outline">
-                          Write a Review
-                        </Button>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Sign in to write a review
+                    <div className="py-4">
+                      {/* Show Google rating prominently when no VegMap reviews */}
+                      {restaurant.google_rating ? (
+                        <div className="border rounded-lg p-4 mb-6">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+                              <span className="text-2xl font-bold">{restaurant.google_rating}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">on Google Maps</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            This restaurant is rated {restaurant.google_rating}/5 on Google Maps.
+                            Be the first to share your experience on VegMap!
+                          </p>
+                        </div>
+                      ) : null}
+                      <div className="text-center py-6">
+                        <MessageSquare className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                        <h3 className="font-semibold mb-1">No VegMap reviews yet</h3>
+                        <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+                          Be the first to share your experience! Was the food good? Is it English-friendly?
                         </p>
-                      )}
+                        {user ? (
+                          <Button onClick={() => setShowReviewForm(true)} variant="outline">
+                            Write a Review
+                          </Button>
+                        ) : (
+                          <Link href="/auth/login">
+                            <Button variant="outline">Sign in to write a review</Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div>

@@ -85,6 +85,10 @@ export default async function RestaurantPage({ params }: Props) {
       }
     }
   }
+  // Add cover image as fallback photo if no user photos
+  if (photos.length === 0 && restaurant.cover_image_url) {
+    photos.push({ id: "cover", url: restaurant.cover_image_url });
+  }
 
   return (
     <>
