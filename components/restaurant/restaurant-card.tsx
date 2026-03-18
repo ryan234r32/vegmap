@@ -15,9 +15,10 @@ import type { MrtLine } from "@/constants";
 interface RestaurantCardProps {
   restaurant: Restaurant;
   onFavoriteNeedAuth?: () => void;
+  distance?: number; // km from user
 }
 
-export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, onFavoriteNeedAuth, distance }: RestaurantCardProps) {
   const { user } = useAuth();
   const { isFavorited, toggle } = useFavorites();
   const favorited = isFavorited(restaurant.id);
@@ -105,9 +106,15 @@ export function RestaurantCard({ restaurant, onFavoriteNeedAuth }: RestaurantCar
             ) : null}
           </div>
 
-          {/* Location: District + Nearest MRT */}
+          {/* Location: Distance + District + Nearest MRT */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 flex-wrap">
-            {restaurant.district && (
+            {distance !== undefined && (
+              <span className="flex items-center gap-1 font-medium text-foreground">
+                <MapPin className="h-3 w-3" />
+                {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
+              </span>
+            )}
+            {!distance && restaurant.district && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 {restaurant.district}

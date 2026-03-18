@@ -234,6 +234,7 @@ export function RestaurantFiltersBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="distance">Nearest to Me</SelectItem>
               <SelectItem value="reviews">Most Reviews</SelectItem>
               <SelectItem value="english_friendly">English Friendly</SelectItem>
               <SelectItem value="name">Name (A-Z)</SelectItem>

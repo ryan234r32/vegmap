@@ -19,26 +19,12 @@ import type { MrtLine } from "@/constants";
 import { WelcomeSheet } from "@/components/onboarding/welcome-sheet";
 import { VegTypeBadge } from "@/components/restaurant/veg-type-badge";
 import type { RestaurantFilters, Restaurant, VegetarianType } from "@/lib/types";
+import { getDistanceKm } from "@/lib/geo";
 
 const PAGE_SIZE = 24;
 const MOBILE_PAGE_SIZE = 15;
 const LIST_PEEK_HEIGHT = 180;
 const DETAIL_PEEK_HEIGHT = 220;
-
-function getDistanceKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
-): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((a.lat * Math.PI) / 180) *
-      Math.cos((b.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
 
 export default function HomePage() {
   const [filters, setFilters] = useState<RestaurantFilters>({});

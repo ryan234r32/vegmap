@@ -35,6 +35,7 @@ export function BottomSheet({
   const [viewportH, setViewportH] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const prevResetKey = useRef(resetKey);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const drag = useRef({
     active: false,
@@ -42,6 +43,7 @@ export function BottomSheet({
     startTranslate: 0,
     currentY: 0,
     startTime: 0,
+    lastY: 0,
   });
 
   useEffect(() => {
@@ -92,6 +94,7 @@ export function BottomSheet({
         startTranslate: translateY,
         currentY: e.clientY,
         startTime: Date.now(),
+        lastY: translateY,
       };
       setIsDragging(true);
     },
@@ -107,7 +110,11 @@ export function BottomSheet({
         getTargetY("full"),
         Math.min(viewportH - 40, drag.current.startTranslate + diff)
       );
-      setTranslateY(newY);
+      // Write directly to DOM — skip React re-render during drag
+      drag.current.lastY = newY;
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${newY}px)`;
+      }
     },
     [getTargetY, viewportH]
   );
@@ -147,11 +154,8 @@ export function BottomSheet({
         return;
       }
 
-      // Snap to nearest
-      const currentY = Math.max(
-        getTargetY("full"),
-        Math.min(viewportH - 40, d.startTranslate + (d.currentY - d.startY))
-      );
+      // Snap to nearest — use lastY from drag ref (not React state)
+      const currentY = d.lastY;
 
       // Dragged below peek → dismiss
       if (currentY > getTargetY("peek") + 50 && onDismiss) {
@@ -176,6 +180,7 @@ export function BottomSheet({
 
   return (
     <div
+      ref={sheetRef}
       className="fixed left-0 right-0 z-40"
       style={{
         transform: `translateY(${translateY}px)`,
@@ -185,12 +190,13 @@ export function BottomSheet({
         height: `${viewportH}px`,
         top: 0,
         pointerEvents: "none",
+        willChange: "transform",
       }}
     >
       {/* Inner content — only this area receives pointer events */}
       <div
-        className={`bg-background rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.15)] h-full will-change-transform ${className}`}
-        style={{ pointerEvents: "auto" }}
+        className={`bg-background rounded-t-2xl shadow-[0_-2px_8px_rgba(0,0,0,0.1)] h-full ${className}`}
+        style={{ pointerEvents: "auto", contain: "layout style paint" }}
       >
         {/* Drag Handle — 46px touch target */}
         <div

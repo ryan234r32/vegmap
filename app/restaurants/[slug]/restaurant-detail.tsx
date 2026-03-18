@@ -142,6 +142,14 @@ export function RestaurantDetail({
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      {/* Fixed back button — always visible on mobile */}
+      <button
+        onClick={() => router.back()}
+        className="fixed top-16 left-3 z-30 md:hidden bg-background/80 hover:bg-background text-foreground rounded-full p-2 backdrop-blur-sm shadow-md transition-colors cursor-pointer border"
+        aria-label="Go back"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
       <main className="flex-1 pb-20 md:pb-0">
         {/* Cover Image — shorter on mobile */}
         <div className="relative h-36 sm:h-48 md:h-80 bg-muted">
@@ -156,10 +164,10 @@ export function RestaurantDetail({
               <span className="text-6xl md:text-8xl">🥬</span>
             </div>
           )}
-          {/* Back button overlay */}
+          {/* Back button overlay — desktop only */}
           <button
             onClick={() => router.back()}
-            className="absolute top-3 left-3 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 backdrop-blur-sm transition-colors cursor-pointer"
+            className="absolute top-3 left-3 z-10 hidden md:flex bg-black/50 hover:bg-black/70 text-white rounded-full p-2 backdrop-blur-sm transition-colors cursor-pointer"
             aria-label="Go back"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -351,14 +359,14 @@ export function RestaurantDetail({
                 </>
               )}
 
-              {/* Tabs — default to menu (user's #1 priority) */}
-              <Tabs defaultValue="menu">
+              {/* Tabs — default to reviews (user testing: #1 priority) */}
+              <Tabs defaultValue="reviews">
                 <TabsList>
-                  <TabsTrigger value="menu">
-                    Menu {menus.length > 0 && `(${menus.length})`}
-                  </TabsTrigger>
                   <TabsTrigger value="reviews">
                     Reviews {reviews.length > 0 && `(${reviews.length})`}
+                  </TabsTrigger>
+                  <TabsTrigger value="menu">
+                    Menu {menus.length > 0 && `(${menus.length})`}
                   </TabsTrigger>
                   <TabsTrigger value="photos">
                     Photos {photos.length > 0 && `(${photos.length})`}
