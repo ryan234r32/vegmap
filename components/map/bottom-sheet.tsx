@@ -186,7 +186,7 @@ export function BottomSheet({
         transform: `translateY(${translateY}px)`,
         transition: isDragging
           ? "none"
-          : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          : "transform 200ms cubic-bezier(0.4, 0, 0.2, 1)",
         height: `${viewportH}px`,
         top: 0,
         pointerEvents: "none",

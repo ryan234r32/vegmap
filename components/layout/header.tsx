@@ -11,14 +11,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Menu, User, LogOut, Heart, Star, Shield } from "lucide-react";
+import { MapPin, Menu, User, LogOut, Heart, Star, Shield, CreditCard, Utensils } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useState } from "react";
 
 const NAV_LINKS = [
-  { href: "/", label: "Map", icon: MapPin },
-  { href: "/restaurants", label: "Restaurants", icon: Star },
+  { href: "/", label: "Map", icon: MapPin, desc: "Find nearby restaurants" },
+  { href: "/restaurants", label: "Restaurants", icon: Utensils, desc: "Browse all restaurants" },
+  { href: "/favorites", label: "Favorites", icon: Heart, desc: "Your saved places" },
+  { href: "/tools/diet-card", label: "Diet Card", icon: CreditCard, desc: "Show dietary needs in Chinese" },
 ];
 
 export function Header() {
@@ -118,16 +120,19 @@ export function Header() {
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px]">
-              <nav className="flex flex-col space-y-4 mt-8">
+              <nav className="flex flex-col space-y-1 mt-8">
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center space-x-2 text-lg"
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                   >
-                    <link.icon className="h-5 w-5" />
-                    <span>{link.label}</span>
+                    <link.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      <div className="font-medium">{link.label}</div>
+                      <div className="text-xs text-muted-foreground">{link.desc}</div>
+                    </div>
                   </Link>
                 ))}
               </nav>

@@ -29,6 +29,7 @@ const DETAIL_PEEK_HEIGHT = 220;
 export default function HomePage() {
   const [filters, setFilters] = useState<RestaurantFilters>({});
   const [view, setView] = useState<"map" | "list">("map");
+  const [mobileView, setMobileView] = useState<"map" | "list">("map");
   const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -256,94 +257,205 @@ export default function HomePage() {
 
         {/* ===== MOBILE LAYOUT ===== */}
         <div className="md:hidden relative flex-1">
-          <MapContainer
-            restaurants={displayRestaurants}
-            userLocation={userLocation}
-            onMarkerClick={handleMarkerClick}
-            className="w-full h-[calc(100vh-3.5rem)]"
-          />
+          {mobileView === "map" ? (
+            <>
+              <MapContainer
+                restaurants={displayRestaurants}
+                userLocation={userLocation}
+                onMarkerClick={handleMarkerClick}
+                className="w-full h-[calc(100vh-3.5rem)]"
+              />
 
-          {/* Mobile: Floating Near Me button */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              className="h-11 w-11 rounded-full shadow-md"
-              onClick={requestLocation}
-              disabled={geoLoading}
-            >
-              <Locate className={`h-4 w-4 ${geoLoading ? "animate-pulse" : ""}`} />
-            </Button>
-          </div>
-
-          {/* Mobile: Geo error toast */}
-          {geoError && (
-            <div className="absolute top-3 left-3 right-16 z-10">
-              <div className="bg-destructive/90 text-destructive-foreground text-xs px-3 py-2 rounded-lg shadow">
-                {geoError}
+              {/* Mobile: Floating Map/List toggle */}
+              <div className="absolute top-3 left-3 z-10">
+                <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-md flex p-1 border">
+                  <button
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                  >
+                    <MapIcon className="h-3.5 w-3.5 inline mr-1" />Map
+                  </button>
+                  <button
+                    className="px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground"
+                    onClick={() => setMobileView("list")}
+                  >
+                    <List className="h-3.5 w-3.5 inline mr-1" />List
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Mobile: Bottom Sheet — switches between list and detail mode */}
-          <BottomSheet
-            peekHeight={isDetailMode ? DETAIL_PEEK_HEIGHT : LIST_PEEK_HEIGHT}
-            resetKey={selectedRestaurant?.id ?? "list"}
-            onDismiss={isDetailMode ? handleDismissDetail : undefined}
-            peekContent={
-              isDetailMode ? (
-                /* === DETAIL MODE PEEK: restaurant preview === */
-                <DetailPeekContent
-                  restaurant={selectedRestaurant!}
-                  userLocation={userLocation}
-                  onClose={handleDismissDetail}
-                />
-              ) : (
-                /* === LIST MODE PEEK: count + filter badges === */
-                <div>
-                  <p className="text-sm font-medium mb-2">
-                    {lat && lng ? "Near You" : "All Restaurants"}{" "}
-                    <span className="text-muted-foreground font-normal">({displayRestaurants.length})</span>
-                  </p>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                    {VEGETARIAN_TYPES.map((type) => {
-                      const isActive = filters.vegetarianTypes?.includes(type.value);
-                      return (
-                        <Badge
-                          key={type.value}
-                          variant={isActive ? "default" : "outline"}
-                          className="cursor-pointer select-none whitespace-nowrap text-xs flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const current = filters.vegetarianTypes ?? [];
-                            const updated = current.includes(type.value)
-                              ? current.filter((t) => t !== type.value)
-                              : [...current, type.value];
-                            setFilters({ ...filters, vegetarianTypes: updated });
-                            setMobileVisibleCount(MOBILE_PAGE_SIZE);
-                          }}
-                        >
-                          {type.emoji} {type.label}
-                        </Badge>
-                      );
-                    })}
+              {/* Mobile: Floating Near Me button */}
+              <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-11 w-11 rounded-full shadow-md"
+                  onClick={requestLocation}
+                  disabled={geoLoading}
+                >
+                  <Locate className={`h-4 w-4 ${geoLoading ? "animate-pulse" : ""}`} />
+                </Button>
+              </div>
+
+              {/* Mobile: Geo error toast */}
+              {geoError && (
+                <div className="absolute top-3 left-44 right-16 z-10">
+                  <div className="bg-destructive/90 text-destructive-foreground text-xs px-3 py-2 rounded-lg shadow">
+                    {geoError}
                   </div>
                 </div>
-              )
-            }
-          >
-            {isDetailMode ? (
-              /* === DETAIL MODE SCROLL: more info + CTAs === */
-              <DetailScrollContent
-                restaurant={selectedRestaurant!}
-                userLocation={userLocation}
-              />
-            ) : (
-              /* === LIST MODE SCROLL: restaurant list === */
-              <div className="space-y-0 -mx-4">
-                {displayRestaurants.slice(0, mobileVisibleCount).map((restaurant) => (
-                  <CompactRestaurantItem key={restaurant.id} restaurant={restaurant} />
-                ))}
+              )}
+
+              {/* Mobile: Bottom Sheet — switches between list and detail mode */}
+              <BottomSheet
+                peekHeight={isDetailMode ? DETAIL_PEEK_HEIGHT : LIST_PEEK_HEIGHT}
+                resetKey={selectedRestaurant?.id ?? "list"}
+                onDismiss={isDetailMode ? handleDismissDetail : undefined}
+                peekContent={
+                  isDetailMode ? (
+                    <DetailPeekContent
+                      restaurant={selectedRestaurant!}
+                      userLocation={userLocation}
+                      onClose={handleDismissDetail}
+                    />
+                  ) : (
+                    <div>
+                      <p className="text-sm font-medium mb-2">
+                        {lat && lng ? "Near You" : "All Restaurants"}{" "}
+                        <span className="text-muted-foreground font-normal">({displayRestaurants.length})</span>
+                      </p>
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                        {VEGETARIAN_TYPES.map((type) => {
+                          const isActive = filters.vegetarianTypes?.includes(type.value);
+                          return (
+                            <Badge
+                              key={type.value}
+                              variant={isActive ? "default" : "outline"}
+                              className="cursor-pointer select-none whitespace-nowrap text-xs flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const current = filters.vegetarianTypes ?? [];
+                                const updated = current.includes(type.value)
+                                  ? current.filter((t) => t !== type.value)
+                                  : [...current, type.value];
+                                setFilters({ ...filters, vegetarianTypes: updated });
+                                setMobileVisibleCount(MOBILE_PAGE_SIZE);
+                              }}
+                            >
+                              {type.emoji} {type.label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+                }
+              >
+                {isDetailMode ? (
+                  <DetailScrollContent
+                    restaurant={selectedRestaurant!}
+                    userLocation={userLocation}
+                  />
+                ) : (
+                  <div className="space-y-0 -mx-4">
+                    {displayRestaurants.slice(0, mobileVisibleCount).map((restaurant) => (
+                      <CompactRestaurantItem key={restaurant.id} restaurant={restaurant} />
+                    ))}
+                    {mobileVisibleCount < displayRestaurants.length && (
+                      <div className="text-center py-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setMobileVisibleCount((c) => c + MOBILE_PAGE_SIZE)}
+                        >
+                          Show More ({displayRestaurants.length - mobileVisibleCount} remaining)
+                        </Button>
+                      </div>
+                    )}
+                    {displayRestaurants.length === 0 && !loading && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No restaurants found.</p>
+                        <Button variant="link" size="sm" onClick={() => setFilters({})}>Clear filters</Button>
+                      </div>
+                    )}
+                    {loading && (
+                      <div className="space-y-0">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="flex gap-3 p-3 border-b">
+                            <div className="w-16 h-16 rounded-lg bg-muted animate-pulse flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                              <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
+                              <div className="h-3 bg-muted rounded animate-pulse w-1/3" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </BottomSheet>
+            </>
+          ) : (
+            /* === MOBILE LIST VIEW === */
+            <div className="flex-1 overflow-y-auto h-[calc(100vh-3.5rem)]">
+              {/* Toggle bar */}
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-4 py-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="bg-muted rounded-full flex p-1">
+                    <button
+                      className="px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground"
+                      onClick={() => setMobileView("map")}
+                    >
+                      <MapIcon className="h-3.5 w-3.5 inline mr-1" />Map
+                    </button>
+                    <button
+                      className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                    >
+                      <List className="h-3.5 w-3.5 inline mr-1" />List
+                    </button>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { requestLocation(); }}
+                    disabled={geoLoading}
+                  >
+                    <Locate className="h-3.5 w-3.5 mr-1" />
+                    {geoLoading ? "..." : "Near Me"}
+                  </Button>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                  {VEGETARIAN_TYPES.map((type) => {
+                    const isActive = filters.vegetarianTypes?.includes(type.value);
+                    return (
+                      <Badge
+                        key={type.value}
+                        variant={isActive ? "default" : "outline"}
+                        className="cursor-pointer select-none whitespace-nowrap text-xs flex-shrink-0"
+                        onClick={() => {
+                          const current = filters.vegetarianTypes ?? [];
+                          const updated = current.includes(type.value)
+                            ? current.filter((t) => t !== type.value)
+                            : [...current, type.value];
+                          setFilters({ ...filters, vegetarianTypes: updated });
+                        }}
+                      >
+                        {type.emoji} {type.label}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Restaurant list */}
+              <div className="px-4 py-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {displayRestaurants.length} restaurants found
+                </p>
+                <div className="grid grid-cols-1 gap-3">
+                  {displayRestaurants.slice(0, mobileVisibleCount).map((restaurant) => (
+                    <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                  ))}
+                </div>
                 {mobileVisibleCount < displayRestaurants.length && (
                   <div className="text-center py-4">
                     <Button
@@ -355,29 +467,9 @@ export default function HomePage() {
                     </Button>
                   </div>
                 )}
-                {displayRestaurants.length === 0 && !loading && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No restaurants found.</p>
-                    <Button variant="link" size="sm" onClick={() => setFilters({})}>Clear filters</Button>
-                  </div>
-                )}
-                {loading && (
-                  <div className="space-y-0">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="flex gap-3 p-3 border-b">
-                        <div className="w-16 h-16 rounded-lg bg-muted animate-pulse flex-shrink-0" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                          <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
-                          <div className="h-3 bg-muted rounded animate-pulse w-1/3" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            )}
-          </BottomSheet>
+            </div>
+          )}
         </div>
       </main>
 
@@ -420,7 +512,7 @@ function DetailPeekContent({
       : null;
 
   return (
-    <div className="animate-in fade-in duration-200">
+    <div>
       <div className="flex gap-3">
         {/* Image */}
         <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
