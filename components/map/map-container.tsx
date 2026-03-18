@@ -128,6 +128,25 @@ function ClusteredMarkers({
   return null;
 }
 
+/** Shows MRT/transit lines on the map */
+function TransitLayer() {
+  const map = useMap();
+  const layerRef = useRef<google.maps.TransitLayer | null>(null);
+
+  useEffect(() => {
+    if (!map) return;
+    if (!layerRef.current) {
+      layerRef.current = new google.maps.TransitLayer();
+    }
+    layerRef.current.setMap(map);
+    return () => {
+      layerRef.current?.setMap(null);
+    };
+  }, [map]);
+
+  return null;
+}
+
 export function MapContainer({
   restaurants,
   center = TAIPEI_CENTER,
@@ -144,6 +163,8 @@ export function MapContainer({
     },
     [onMarkerClick]
   );
+
+  const mapId = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
 
   if (!apiKey) {
     return (
@@ -169,12 +190,13 @@ export function MapContainer({
       <Map
         defaultCenter={center}
         defaultZoom={zoom}
-        mapId="vegmap-main"
+        {...(mapId ? { mapId } : {})}
         className={className}
         gestureHandling="greedy"
         disableDefaultUI={false}
         clickableIcons={false}
       >
+        <TransitLayer />
         <ClusteredMarkers
           restaurants={restaurants}
           onMarkerClick={handleMarkerClick}

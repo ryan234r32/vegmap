@@ -31,7 +31,9 @@ import {
   Camera,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { DAYS_OF_WEEK, PRICE_RANGES, MRT_STATIONS, MRT_LINE_COLORS } from "@/constants";
 import type { MrtLine } from "@/constants";
 import type { Restaurant, Review, Menu, MenuItem } from "@/lib/types";
@@ -77,6 +79,7 @@ export function RestaurantDetail({
   menus,
   photos,
 }: Props) {
+  const router = useRouter();
   const { user } = useAuth();
   const { isFavorited, toggle: toggleFavorite } = useFavorites();
   const [reviews, setReviews] = useState(initialReviews);
@@ -153,6 +156,14 @@ export function RestaurantDetail({
               <span className="text-6xl md:text-8xl">🥬</span>
             </div>
           )}
+          {/* Back button overlay */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-3 left-3 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 backdrop-blur-sm transition-colors cursor-pointer"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="container mx-auto px-4 py-4 md:py-6">

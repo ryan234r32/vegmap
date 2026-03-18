@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MapContainer } from "@/components/map/map-container";
@@ -21,7 +21,7 @@ import { VegTypeBadge } from "@/components/restaurant/veg-type-badge";
 import type { RestaurantFilters, Restaurant, VegetarianType } from "@/lib/types";
 
 const PAGE_SIZE = 24;
-const MOBILE_PAGE_SIZE = 30;
+const MOBILE_PAGE_SIZE = 15;
 const LIST_PEEK_HEIGHT = 180;
 const DETAIL_PEEK_HEIGHT = 220;
 
@@ -701,22 +701,27 @@ function DesktopPreviewCard({
   );
 }
 
-/** Compact restaurant row for mobile bottom sheet */
-function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
+/** Compact restaurant row for mobile bottom sheet — memoized for scroll perf */
+const CompactRestaurantItem = memo(function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
+  const station = restaurant.nearest_mrt
+    ? MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt)
+    : null;
+  const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
+
   return (
     <Link
       href={`/restaurants/${restaurant.slug}`}
       className="flex gap-3 p-3 border-b hover:bg-muted/50 transition-colors"
     >
-      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
         {restaurant.cover_image_url ? (
-          <Image
+          /* Native img for scroll performance — avoids next/image hydration cost */
+          <img
             src={restaurant.cover_image_url}
             alt={restaurant.name_en}
-            fill
-            className="object-cover"
-            sizes="64px"
+            className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-xl">🌱</div>
@@ -741,23 +746,19 @@ function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
               <span className="text-[10px] text-muted-foreground">Google</span>
             </div>
           ) : null}
-          {restaurant.nearest_mrt ? (() => {
-            const station = MRT_STATIONS.find(s => s.name_en === restaurant.nearest_mrt);
-            const lineColor = station ? MRT_LINE_COLORS[station.line as MrtLine] : undefined;
-            return (
-              <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                {lineColor && (
-                  <span className="inline-block w-2 h-2 rounded-full mr-0.5" style={{ backgroundColor: lineColor }} />
-                )}
-                {restaurant.nearest_mrt}
-              </div>
-            );
-          })() : restaurant.district && (
+          {restaurant.nearest_mrt ? (
+            <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
+              {lineColor && (
+                <span className="inline-block w-2 h-2 rounded-full mr-0.5" style={{ backgroundColor: lineColor }} />
+              )}
+              {restaurant.nearest_mrt}
+            </div>
+          ) : restaurant.district ? (
             <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" />
               {restaurant.district}
             </div>
-          )}
+          ) : null}
           {restaurant.price_range && (
             <span className="text-xs text-muted-foreground">{restaurant.price_range}</span>
           )}
@@ -765,4 +766,4 @@ function CompactRestaurantItem({ restaurant }: { restaurant: Restaurant }) {
       </div>
     </Link>
   );
-}
+});

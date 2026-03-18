@@ -212,7 +212,11 @@ export function BottomSheet({
         {/* Scrollable Content */}
         <div
           className="overflow-y-auto px-4 pb-safe overscroll-contain"
-          style={{ height: `calc(100% - ${peekHeight}px)` }}
+          style={{
+            height: `calc(100% - ${peekHeight}px)`,
+            WebkitOverflowScrolling: "touch",
+            contentVisibility: "auto",
+          }}
         >
           {children}
         </div>
